@@ -18,4 +18,6 @@ class User(Table, tablename="auth_user"):
     is_superuser = Boolean(default=False)
     is_staff = Boolean(default=False)
     is_active = Boolean(default=True)
+    is_buyer = Boolean(default=False)
+    is_dealer = Boolean(default=False)
     date_joined = Timestamp()

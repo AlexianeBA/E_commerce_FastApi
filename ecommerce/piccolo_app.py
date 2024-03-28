@@ -84,6 +84,8 @@ class UserModel(BaseModel):
     id: int
     username: str
     password: str
+    is_buyer: bool
+    is_dealer: bool
 
 
 class UserIn(BaseModel):
@@ -95,6 +97,8 @@ class UserIn(BaseModel):
     is_superuser: bool = False
     is_staff: bool = False
     is_active: bool = True
+    is_buyer: bool = False
+    is_dealer: bool = False
     date_joined: datetime = datetime.now()
 
 
@@ -114,6 +118,8 @@ async def get_users():
             "id": user["id"],
             "username": user["username"],
             "password": user["password"],
+            "is_buyer": user["is_buyer"],
+            "is_dealer": user["is_dealer"],
         }
         for user in users
     ]
@@ -134,6 +140,8 @@ async def create_user(user_data: UserIn):
         is_superuser=user_data.is_superuser,
         is_staff=user_data.is_staff,
         is_active=user_data.is_active,
+        is_buyer=user_data.is_buyer,
+        is_dealer=user_data.is_dealer,
         date_joined=user_data.date_joined,
     )
     await user.save().run()
