@@ -3,16 +3,22 @@ Import all of the Tables subclasses in your app here, and register them with
 the APP_CONFIG.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from typing import List, Optional
 from piccolo.conf.apps import AppConfig, table_finder
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from piccolo_conf import DB
 from tables import Product, User
 from pydantic import BaseModel
 from passlib.context import CryptContext
+import jwt
 
 app = FastAPI()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 APP_CONFIG = AppConfig(
@@ -125,9 +131,6 @@ async def get_users():
     ]
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 @app.post("/users/", response_model=UserModel)
 async def create_user(user_data: UserIn):
     hashed_password = pwd_context.hash(user_data.password)
@@ -173,3 +176,25 @@ async def delete_user(user_id: int):
     else:
         await user.remove().run()
     return {"message": "User deleted"}
+
+
+class Login(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/login")
+async def login(login_data: Login):
+    user = (
+        await User.objects().where(User.username == login_data.username).first().run()
+    )
+    if not user or not pwd_context.verify(login_data.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    expiration = datetime.utcnow() + timedelta(hours=24)
+    token_payload = {"sub": user.username, "exp": expiration}
+    token = jwt.encode(token_payload, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
