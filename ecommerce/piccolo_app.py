@@ -195,6 +195,11 @@ async def login(login_data: Login):
             headers={"WWW-Authenticate": "Bearer"},
         )
     expiration = datetime.utcnow() + timedelta(hours=24)
-    token_payload = {"sub": user.username, "exp": expiration}
+    token_payload = {
+        "username": user.username,
+        "exp": expiration,
+        "is_buyer": user.is_buyer,
+        "is_dealer": user.is_dealer,
+    }
     token = jwt.encode(token_payload, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
