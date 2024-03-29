@@ -3,9 +3,24 @@ Import all of the Tables subclasses in your app here, and register them with
 the APP_CONFIG.
 """
 
+# TODO: créer une architecture
+# TODO: faire des json response pour endpoint
+# TODO: protéger les endpoints avec des tokens
+# TODO: créer des use case
+# TODO: faire des contrôles de validation, cohérence
+# TODO: revoir les modèles Prodcts
+# TODO: FK pour buyer par rapport aux produits
+# TODO: mettre en place la paiement (paiement, vérification, validation)
+# TODO: ajouter des filtres produits
+# TODO: typage
+# TODO: tests unitaires
+
+
 from datetime import datetime, timedelta
 import os
 from typing import List, Optional
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from piccolo.conf.apps import AppConfig, table_finder
 from fastapi import FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -86,7 +101,7 @@ async def delete_product(product_id: int):
     return {"message": "Product deleted"}
 
 
-class UserModel(BaseModel):
+class UserResponse(BaseModel):
     id: int
     username: str
     password: str
@@ -94,7 +109,7 @@ class UserModel(BaseModel):
     is_dealer: bool
 
 
-class UserIn(BaseModel):
+class UserRequest(BaseModel):
     username: str
     password: str
     first_name: str
@@ -116,7 +131,7 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
 
 
-@app.get("/users", response_model=List[UserModel])
+@app.get("/users", response_model=List[UserResponse])
 async def get_users():
     users = await User.select().run()
     return [
@@ -131,8 +146,8 @@ async def get_users():
     ]
 
 
-@app.post("/users/", response_model=UserModel)
-async def create_user(user_data: UserIn):
+@app.post("/users/", response_model=UserResponse)
+async def create_user(user_data: UserRequest):
     hashed_password = pwd_context.hash(user_data.password)
     user = User(
         username=user_data.username,
@@ -148,24 +163,35 @@ async def create_user(user_data: UserIn):
         date_joined=user_data.date_joined,
     )
     await user.save().run()
-    return UserModel(**user.to_dict())
+    return UserResponse(**user.to_dict())
 
 
-@app.put("/users/{user_id}", response_model=UserModel)
-async def update_user(user_id: int, user_data: UserUpdate):
+@app.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: int, user_data: UserUpdate) -> JSONResponse:
     user = await User.objects().where(User.id == user_id).first().run()
-    if user_data.username is not None:
-        user.username = user_data.username
-    if user_data.password is not None:
-        user.password = pwd_context.hash(user_data.password)
-    if user_data.first_name is not None:
-        user.first_name = user_data.first_name
-    if user_data.last_name is not None:
-        user.last_name = user_data.last_name
-    if user_data.email is not None:
-        user.email = user_data.email
-    await user.save().run()
-    return UserModel(**user.to_dict())
+    if user:
+        if user_data.username is not None:
+            user.username = user_data.username
+        if user_data.password is not None:
+            user.password = pwd_context.hash(user_data.password)
+        if user_data.first_name is not None:
+            user.first_name = user_data.first_name
+        if user_data.last_name is not None:
+            user.last_name = user_data.last_name
+        if user_data.email is not None:
+            user.email = user_data.email
+        await user.save().run()
+        # return UserResponse(**user.to_dict())
+    log_dict = {
+        "code": "200",
+        "type": "",
+        "message": "utilisateur modifié avec succés",
+    }
+    json_compatible_item_data = jsonable_encoder(log_dict)
+    return JSONResponse(
+        content=json_compatible_item_data,
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @app.delete("/users/{user_id}")
@@ -197,9 +223,8 @@ async def login(login_data: Login):
     expiration = datetime.utcnow() + timedelta(hours=24)
     token_payload = {
         "username": user.username,
+        "email": user.email,
         "exp": expiration,
-        "is_buyer": user.is_buyer,
-        "is_dealer": user.is_dealer,
     }
     token = jwt.encode(token_payload, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
