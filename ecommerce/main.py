@@ -3,5 +3,7 @@ from routes import users, products, auth
 
 app = FastAPI()
 
-for router in users, products, auth:
-    app.include_router(router.router)
+
+app.include_router(users.router, tags=["users"])
+app.include_router(products.router, tags=["products"])
+app.include_router(auth.router, tags=["auth"])

@@ -3,6 +3,7 @@ from piccolo.columns import Varchar, Integer, Boolean, Timestamp, Serial
 
 
 class Product(Table, tablename="dashboard_product"):
+    id = Serial(null=False, primary_key=True)
     name = Varchar()
     price = Integer()
     stock = Integer()

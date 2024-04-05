@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, status
-import jwt
+from fastapi.responses import JSONResponse
+import jwt as jwt
 from models import Login
 from tables import User
 from settings import pwd_context, SECRET_KEY, ALGORITHM
@@ -20,10 +21,11 @@ async def login(login_data: Login):
             headers={"WWW-Authenticate": "Bearer"},
         )
     expiration = datetime.utcnow() + timedelta(hours=24)
-    token_payload = {
+    payload = {
         "username": user.username,
         "email": user.email,
         "exp": expiration,
     }
-    token = jwt.encode(token_payload, SECRET_KEY, algorithm=ALGORITHM)
-    return {"access_token": token, "token_type": "bearer"}
+    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    content = {"access_token": encoded_jwt, "token_type": "bearer"}
+    return JSONResponse(content=content)

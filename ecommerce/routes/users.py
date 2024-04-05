@@ -12,19 +12,22 @@ router = APIRouter()
 @router.get("/users", response_model=List[UserResponse])
 async def get_users():
     users = await User.select().run()
-    return [
-        {
-            "id": user["id"],
-            "username": user["username"],
-            "password": user["password"],
-            "is_buyer": user["is_buyer"],
-            "is_dealer": user["is_dealer"],
-        }
-        for user in users
-    ]
+    return JSONResponse(
+        [
+            {
+                "message": "Liste de tous les utilisateurs:",
+                "id": user["id"],
+                "username": user["username"],
+                "password": user["password"],
+                "is_buyer": user["is_buyer"],
+                "is_dealer": user["is_dealer"],
+            }
+            for user in users
+        ]
+    )
 
 
-@router.post("/users/", response_model=UserResponse)
+@router.post("/create_users/", response_model=UserResponse)
 async def create_user(user_data: UserRequest):
     hashed_password = pwd_context.hash(user_data.password)
     user = User(
@@ -44,7 +47,7 @@ async def create_user(user_data: UserRequest):
     return UserResponse(**user.to_dict())
 
 
-@router.put("/users/{user_id}", response_model=UserResponse)
+@router.put("/update_users/{user_id}", response_model=UserResponse)
 async def update_user(user_id: int, user_data: UserUpdate) -> JSONResponse:
     user = await User.objects().where(User.id == user_id).first().run()
     if user:
@@ -72,7 +75,7 @@ async def update_user(user_id: int, user_data: UserUpdate) -> JSONResponse:
     )
 
 
-@router.delete("/users/{user_id}")
+@router.delete("/delete_users/{user_id}")
 async def delete_user(user_id: int):
     user = await User.objects().where(User.id == user_id).first().run()
     if not user:
