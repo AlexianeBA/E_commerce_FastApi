@@ -29,6 +29,21 @@ async def get_products():
         )
 
 
+@router.get("/products/{product_id}")
+async def get_product_details(product_id: int):
+    product = await Product.objects().where(Product.id == product_id).first().run()
+    if not product:
+        raise HTTPException(status_code=404, detail="Produit non trouvé")
+    return JSONResponse(
+        {
+            "id": product.id,
+            "name": product.name,
+            "price": float(product.price),
+            "stock": product.stock,
+        }
+    )
+
+
 @router.post("/products/", response_model=ProductModel)
 async def create_product(product_data: ProductIn):
     product = Product(

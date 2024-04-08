@@ -6,6 +6,7 @@ from models import Login
 from tables import User
 from settings import pwd_context, SECRET_KEY, ALGORITHM
 
+
 router = APIRouter()
 
 

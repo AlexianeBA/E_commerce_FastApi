@@ -3,10 +3,10 @@ Import all of the Tables subclasses in your app here, and register them with
 the APP_CONFIG.
 """
 
-# TODO: créer une architecture
-# TODO: faire des json response pour endpoint
 # TODO: protéger les endpoints avec des tokens
 # TODO: créer des use case
+# TODO: idées use case: rechercher des produits, ajouter des produits au panier, voir le contenu du panier, passer une commande, voir l'historique des commandes,
+# TODO: créer une classe cart pour le panier
 # TODO: faire des contrôles de validation, cohérence
 # TODO: revoir les modèles Prodcts
 # TODO: FK pour buyer par rapport aux produits
