@@ -1,14 +1,19 @@
 from typing import List
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from models import ProductIn, ProductModel
 from tables import Product
 from fastapi.responses import JSONResponse
+from routes.auth import get_current_active_dealer
 
 router = APIRouter()
 
 
-@router.get("/products", response_model=List[ProductModel])
+@router.get(
+    "/products",
+    response_model=List[ProductModel],
+    dependencies=[Depends(get_current_active_dealer)],
+)
 async def get_products():
     products = await Product.select().run()
     if products:
@@ -29,7 +34,7 @@ async def get_products():
         )
 
 
-@router.get("/products/{product_id}")
+@router.get("/products/{product_id}", dependencies=[Depends(get_current_active_dealer)])
 async def get_product_details(product_id: int):
     product = await Product.objects().where(Product.id == product_id).first().run()
     if not product:
@@ -44,7 +49,11 @@ async def get_product_details(product_id: int):
     )
 
 
-@router.post("/products/", response_model=ProductModel)
+@router.post(
+    "/products/",
+    response_model=ProductModel,
+    dependencies=[Depends(get_current_active_dealer)],
+)
 async def create_product(product_data: ProductIn):
     product = Product(
         name=product_data.name, price=product_data.price, stock=product_data.stock
@@ -62,7 +71,11 @@ async def create_product(product_data: ProductIn):
     )
 
 
-@router.put("/products/{product_id}", response_model=ProductModel)
+@router.put(
+    "/products/{product_id}",
+    response_model=ProductModel,
+    dependencies=[Depends(get_current_active_dealer)],
+)
 async def update_product(product_id: int, product_data: ProductIn):
     product = await Product.objects().where(Product.id == product_id).first().run()
     if product:
@@ -84,7 +97,9 @@ async def update_product(product_id: int, product_data: ProductIn):
         raise HTTPException(status_code=404, detail="Produit non trouvé")
 
 
-@router.delete("/products/{product_id}")
+@router.delete(
+    "/products/{product_id}", dependencies=[Depends(get_current_active_dealer)]
+)
 async def delete_product(product_id: int):
     product = await Product.objects().where(Product.id == product_id).first().run()
     if not product:
