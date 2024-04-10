@@ -62,3 +62,9 @@ class Cart(BaseModel):
     items: list[CartItem]
     total: int
     created_at: datetime
+
+
+class TokenData(BaseModel):
+    username: str
+    is_dealer: bool
+    is_buyer: bool
