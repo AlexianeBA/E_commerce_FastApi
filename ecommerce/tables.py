@@ -1,5 +1,6 @@
 from piccolo.table import Table
 from piccolo.columns import Varchar, Integer, Boolean, Timestamp, Serial
+from enum import Enum
 
 
 class Product(Table, tablename="dashboard_product"):
@@ -7,6 +8,12 @@ class Product(Table, tablename="dashboard_product"):
     name = Varchar()
     price = Integer()
     stock = Integer()
+
+
+class UserType(str, Enum):
+    buyer = "buyer"
+    dealer = "dealer"
+    admin = "admin"
 
 
 class User(Table, tablename="auth_user"):
@@ -19,6 +26,5 @@ class User(Table, tablename="auth_user"):
     is_superuser = Boolean(default=False)
     is_staff = Boolean(default=False)
     is_active = Boolean(default=True)
-    is_buyer = Boolean(default=False)
-    is_dealer = Boolean(default=False)
+    role = Varchar(length=255, choices=UserType, default=UserType.buyer.value)
     date_joined = Timestamp()

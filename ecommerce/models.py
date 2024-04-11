@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
+from enum import Enum
 
 
 class ProductModel(BaseModel):
@@ -16,12 +17,17 @@ class ProductIn(BaseModel):
     stock: int
 
 
+class UserType(str, Enum):
+    buyer = "buyer"
+    dealer = "dealer"
+    admin = "admin"
+
+
 class UserResponse(BaseModel):
     id: int
     username: str
     password: str
-    is_buyer: bool
-    is_dealer: bool
+    role: UserType
 
 
 class UserRequest(BaseModel):
@@ -33,8 +39,7 @@ class UserRequest(BaseModel):
     is_superuser: bool = False
     is_staff: bool = False
     is_active: bool = True
-    is_buyer: bool = False
-    is_dealer: bool = False
+    role: UserType
     date_joined: datetime = datetime.now()
 
 

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from models import ProductIn, ProductModel
 from tables import Product
 from fastapi.responses import JSONResponse
-from routes.auth import get_current_active_dealer
+from routes.auth import get_current_active_dealer, get_current_user
 
 router = APIRouter()
 
@@ -14,7 +14,7 @@ router = APIRouter()
     response_model=List[ProductModel],
     dependencies=[Depends(get_current_active_dealer)],
 )
-async def get_products():
+async def get_products(current_user: str = Depends(get_current_user)):
     products = await Product.select().run()
     if products:
         return JSONResponse(

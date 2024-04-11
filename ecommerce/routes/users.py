@@ -19,8 +19,7 @@ async def get_users():
                 "id": user["id"],
                 "username": user["username"],
                 "password": user["password"],
-                "is_buyer": user["is_buyer"],
-                "is_dealer": user["is_dealer"],
+                "role": user["role"],
             }
             for user in users
         ]
@@ -39,8 +38,7 @@ async def create_user(user_data: UserRequest):
         is_superuser=user_data.is_superuser,
         is_staff=user_data.is_staff,
         is_active=user_data.is_active,
-        is_buyer=user_data.is_buyer,
-        is_dealer=user_data.is_dealer,
+        role=user_data.role,
         date_joined=user_data.date_joined,
     )
     await user.save().run()

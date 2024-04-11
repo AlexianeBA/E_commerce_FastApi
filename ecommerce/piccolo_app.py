@@ -19,9 +19,8 @@ the APP_CONFIG.
 import os
 
 from piccolo.conf.apps import AppConfig, table_finder
-
-from piccolo_conf import DB
-
+import os
+from . import piccolo_conf as DB
 
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 APP_CONFIG = AppConfig(
@@ -30,4 +29,5 @@ APP_CONFIG = AppConfig(
     table_classes=table_finder(modules=["tables"], exclude_imported=True),
     migration_dependencies=[],
     commands=[],
+    db=DB,  # type: ignore
 )
