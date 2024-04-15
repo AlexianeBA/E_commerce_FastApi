@@ -42,15 +42,24 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token: unable to decode")
 
 
-async def get_current_active_dealer(current_user: User = Depends(get_current_user)):
+async def get_current_active_dealer(
+    current_user: User = Depends(get_current_user),
+) -> User:
     print(current_user)
     if current_user is not None and current_user.role == "dealer":
         return current_user
     raise HTTPException(status_code=400, detail="User is not a dealer")
 
 
+async def get_current_active_buyer(current_user: User = Depends(get_current_user)):
+    print(current_user)
+    if current_user is not None and current_user.role == "buyer":
+        return current_user
+    raise HTTPException(status_code=400, detail="User is not a buyer")
+
+
 @router.post("/login")
-async def login(login_data: Login):
+async def login(login_data: Login) -> JSONResponse:
     user = (
         await User.objects().where(User.username == login_data.username).first().run()
     )

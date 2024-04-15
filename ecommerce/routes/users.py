@@ -1,16 +1,20 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from models import UserUpdate, UserResponse, UserRequest
 from tables import User
 from settings import pwd_context
+from routes.auth import get_current_user
 
 router = APIRouter()
 
 
-@router.get("/users", response_model=List[UserResponse])
-async def get_users():
+@router.get(
+    "/users",
+    response_model=List[UserResponse],
+)
+async def get_users() -> JSONResponse:
     users = await User.select().run()
     return JSONResponse(
         [
@@ -27,7 +31,7 @@ async def get_users():
 
 
 @router.post("/create_users/", response_model=UserResponse)
-async def create_user(user_data: UserRequest):
+async def create_user(user_data: UserRequest) -> JSONResponse:
     hashed_password = pwd_context.hash(user_data.password)
     user = User(
         username=user_data.username,
@@ -39,15 +43,20 @@ async def create_user(user_data: UserRequest):
         is_staff=user_data.is_staff,
         is_active=user_data.is_active,
         role=user_data.role,
-        date_joined=user_data.date_joined,
     )
     await user.save().run()
-    return UserResponse(**user.to_dict())
+    return JSONResponse(content=user.to_dict(), status_code=status.HTTP_200_OK)
 
 
-@router.put("/update_users/{user_id}", response_model=UserResponse)
-async def update_user(user_id: int, user_data: UserUpdate) -> JSONResponse:
-    user = await User.objects().where(User.id == user_id).first().run()
+@router.put(
+    "/update_profile",
+    response_model=UserResponse,
+    dependencies=[Depends(get_current_user)],
+)
+async def update_user(
+    user_data: UserUpdate, current_user=Depends(get_current_user)
+) -> JSONResponse:
+    user = await User.objects().where(User.id == current_user.id).first().run()
     if user:
         if user_data.username is not None:
             user.username = user_data.username
@@ -60,7 +69,7 @@ async def update_user(user_id: int, user_data: UserUpdate) -> JSONResponse:
         if user_data.email is not None:
             user.email = user_data.email
         await user.save().run()
-        # return UserResponse(**user.to_dict())
+
     log_dict = {
         "code": "200",
         "type": "",
@@ -73,11 +82,12 @@ async def update_user(user_id: int, user_data: UserUpdate) -> JSONResponse:
     )
 
 
-@router.delete("/delete_users/{user_id}")
-async def delete_user(user_id: int):
-    user = await User.objects().where(User.id == user_id).first().run()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    else:
+@router.delete("/delete_profile", dependencies=[Depends(get_current_user)])
+async def delete_user(current_user=Depends(get_current_user)) -> JSONResponse:
+    user = await User.objects().where(User.id == current_user.id).first().run()
+    if user:
         await user.remove().run()
-    return {"message": "User deleted"}
+        return JSONResponse({"message": "Profil supprimé avec succès"})
+
+    else:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")

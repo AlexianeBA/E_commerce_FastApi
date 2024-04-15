@@ -6,7 +6,7 @@ the APP_CONFIG.
 # TODO: protéger les endpoints avec des tokens
 # TODO: créer des use case
 # TODO: idées use case: rechercher des produits, ajouter des produits au panier, voir le contenu du panier, passer une commande, voir l'historique des commandes,
-# TODO: créer une classe cart pour le panier
+
 # TODO: faire des contrôles de validation, cohérence
 # TODO: revoir les modèles Prodcts
 # TODO: FK pour buyer par rapport aux produits
@@ -20,14 +20,12 @@ import os
 
 from piccolo.conf.apps import AppConfig, table_finder
 import os
-from . import piccolo_conf as DB
 
 CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 APP_CONFIG = AppConfig(
-    app_name="ecommerce",
+    app_name="ecommerce_fast_api",
     migrations_folder_path=os.path.join(CURRENT_DIRECTORY, "piccolo_migrations"),
     table_classes=table_finder(modules=["tables"], exclude_imported=True),
     migration_dependencies=[],
     commands=[],
-    db=DB,  # type: ignore
 )

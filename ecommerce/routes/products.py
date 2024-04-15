@@ -5,17 +5,14 @@ from models import ProductIn, ProductModel
 from tables import Product
 from fastapi.responses import JSONResponse
 from routes.auth import get_current_active_dealer, get_current_user
+from tables import User
 
 router = APIRouter()
 
 
-@router.get(
-    "/products",
-    response_model=List[ProductModel],
-    dependencies=[Depends(get_current_active_dealer)],
-)
-async def get_products(current_user: str = Depends(get_current_user)):
-    products = await Product.select().run()
+@router.get("/products_of_dealer/{dealer_id}", response_model=List[ProductModel])
+async def get_products(current_user: User = Depends(get_current_user)) -> JSONResponse:
+    products = await Product.objects().where(Product.user_id == current_user.id).run()
     if products:
         return JSONResponse(
             content=[
@@ -35,8 +32,16 @@ async def get_products(current_user: str = Depends(get_current_user)):
 
 
 @router.get("/products/{product_id}", dependencies=[Depends(get_current_active_dealer)])
-async def get_product_details(product_id: int):
-    product = await Product.objects().where(Product.id == product_id).first().run()
+async def get_product_details(
+    product_id: int, current_user: User = Depends(get_current_user)
+) -> JSONResponse:
+    product = (
+        await Product.objects()
+        .where((Product.id == product_id) & (Product.user_id == current_user.id))
+        .first()
+        .run()
+    )
+
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     return JSONResponse(
@@ -54,9 +59,14 @@ async def get_product_details(product_id: int):
     response_model=ProductModel,
     dependencies=[Depends(get_current_active_dealer)],
 )
-async def create_product(product_data: ProductIn):
+async def create_product(
+    product_data: ProductIn, current_user=Depends(get_current_active_dealer)
+) -> JSONResponse:
     product = Product(
-        name=product_data.name, price=product_data.price, stock=product_data.stock
+        name=product_data.name,
+        price=product_data.price,
+        stock=product_data.stock,
+        user_id=current_user.id,
     )
     await product.save().run()
     return JSONResponse(
@@ -66,6 +76,7 @@ async def create_product(product_data: ProductIn):
             "price": product.price,
             "stock": product.stock,
             "message": "Produit créé avec succès",
+            "id du vendeur": f"{current_user.id}",
         },
         status_code=201,
     )
@@ -76,9 +87,17 @@ async def create_product(product_data: ProductIn):
     response_model=ProductModel,
     dependencies=[Depends(get_current_active_dealer)],
 )
-async def update_product(product_id: int, product_data: ProductIn):
-    product = await Product.objects().where(Product.id == product_id).first().run()
-    if product:
+async def update_product(
+    product_id: int, product_data: ProductIn, current_user=Depends(get_current_user)
+) -> JSONResponse:
+    products = (
+        await Product.objects()
+        .where((Product.id == product_id) & (Product.user_id == current_user.id))
+        .run()
+    )
+
+    if products:
+        product = products[0]
         product.name = product_data.name
         product.price = product_data.price
         product.stock = product_data.stock
@@ -100,8 +119,15 @@ async def update_product(product_id: int, product_data: ProductIn):
 @router.delete(
     "/products/{product_id}", dependencies=[Depends(get_current_active_dealer)]
 )
-async def delete_product(product_id: int):
-    product = await Product.objects().where(Product.id == product_id).first().run()
+async def delete_product(
+    product_id: int, current_user=Depends(get_current_user)
+) -> JSONResponse:
+    product = (
+        await Product.objects()
+        .where((Product.id == product_id) & (Product.user_id == current_user.id))
+        .first()
+        .run()
+    )
     if not product:
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     else:

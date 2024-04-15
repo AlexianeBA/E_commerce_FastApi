@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 from enum import Enum
 
@@ -40,7 +40,6 @@ class UserRequest(BaseModel):
     is_staff: bool = False
     is_active: bool = True
     role: UserType
-    date_joined: datetime = datetime.now()
 
 
 class UserUpdate(BaseModel):
@@ -69,7 +68,9 @@ class Cart(BaseModel):
     created_at: datetime
 
 
-class TokenData(BaseModel):
-    username: str
-    is_dealer: bool
-    is_buyer: bool
+class Order(BaseModel):
+    id: int
+    buyer_id: int
+    items: List[CartItem]
+    total: float
+    created_at: datetime
