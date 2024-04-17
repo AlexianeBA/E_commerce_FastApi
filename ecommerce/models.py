@@ -19,7 +19,7 @@ class ProductIn(BaseModel):
 
 class UserType(str, Enum):
     buyer = "buyer"
-    dealer = "dealer"
+    saler = "saler"
     admin = "admin"
 
 

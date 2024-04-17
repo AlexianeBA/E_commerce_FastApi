@@ -10,8 +10,31 @@ from tables import User
 router = APIRouter()
 
 
-@router.get("/products_of_dealer/{dealer_id}", response_model=List[ProductModel])
-async def get_products(current_user: User = Depends(get_current_user)) -> JSONResponse:
+@router.get("/products", response_model=List[ProductModel])
+async def get_all_products() -> JSONResponse:
+    products = await Product.objects().run()
+    if products:
+        return JSONResponse(
+            content=[
+                {
+                    "id": product["id"],
+                    "name": product["name"],
+                    "price": float(product["price"]),
+                    "stock": product["stock"],
+                }
+                for product in products
+            ]
+        )
+    else:
+        return JSONResponse(
+            content={"message": "Aucun produit trouvé"}, status_code=404
+        )
+
+
+@router.get("/products_of_saler", response_model=List[ProductModel])
+async def get_dealer_products(
+    current_user: User = Depends(get_current_user),
+) -> JSONResponse:
     products = await Product.objects().where(Product.user_id == current_user.id).run()
     if products:
         return JSONResponse(

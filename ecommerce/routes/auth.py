@@ -46,9 +46,9 @@ async def get_current_active_dealer(
     current_user: User = Depends(get_current_user),
 ) -> User:
     print(current_user)
-    if current_user is not None and current_user.role == "dealer":
+    if current_user is not None and current_user.role == "saler":
         return current_user
-    raise HTTPException(status_code=400, detail="User is not a dealer")
+    raise HTTPException(status_code=400, detail="User is not a saler")
 
 
 async def get_current_active_buyer(current_user: User = Depends(get_current_user)):
