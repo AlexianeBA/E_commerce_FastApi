@@ -10,6 +10,8 @@ the APP_CONFIG.
 # TODO: typage
 # TODO: tests unitaires
 
+# TODO: ajouter une fonctionnalité pour ajouter des avis aux produits achetés
+
 
 import os
 

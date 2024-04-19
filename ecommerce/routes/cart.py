@@ -1,9 +1,13 @@
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
-from models import CartItem, Cart, Order
+
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from models import CartItem, Cart
 from routes.auth import get_current_active_buyer, get_current_user
-from tables import Product
+from tables import Product, Order, OrderItem
+from typing import List
 
 router = APIRouter()
 
@@ -69,11 +73,22 @@ async def remove_from_cart(
 
 @router.post("/checkout", dependencies=[Depends(get_current_active_buyer)])
 async def checkout(current_user=Depends(get_current_user)) -> dict:
-    user_id = current_user.id
-    if user_id not in carts:
+    buyer_id = current_user.id
+    if buyer_id not in carts:
         raise HTTPException(status_code=404, detail="Panier non trouvé")
 
-    cart = carts[user_id]
+    cart = carts[buyer_id]
+    total = 0
+    for item in cart.items:
+        product = (
+            await Product.objects().where(Product.id == item.product_id).first().run()
+        )
+        if product is not None:
+            total += product.price * item.quantity
+
+    order = Order(buyer_id=buyer_id, total=total)
+    await order.save().run()
+
     for item in cart.items:
         product = (
             await Product.objects().where(Product.id == item.product_id).first().run()
@@ -84,31 +99,28 @@ async def checkout(current_user=Depends(get_current_user)) -> dict:
                 detail="Stock insuffisant pour un ou plusieurs produits",
             )
 
-    for item in cart.items:
-        product = (
-            await Product.objects().where(Product.id == item.product_id).first().run()
+        order_item = OrderItem(
+            order_id=order.id, product_id=item.product_id, quantity=item.quantity
         )
-        if product is not None:
-            product.stock -= item.quantity
-            await product.save().run()
+        await order_item.save().run()
 
-    carts[user_id].items = []
+    carts[buyer_id].items = []
     return {"message": "Achat effectué avec succès"}
-
-
-from typing import List
 
 
 @router.get(
     "/past_orders",
-    response_model=List[Order],
     dependencies=[Depends(get_current_active_buyer)],
 )
-async def get_past_orders(current_user=Depends(get_current_user)) -> List[Order]:
+async def get_past_orders(current_user=Depends(get_current_user)) -> JSONResponse:
     user_id = current_user.id
-    if user_id not in Order:
+    orders = await Order.objects().where(Order.buyer_id == user_id).run()
+    if not orders:
         raise HTTPException(
             status_code=400,
             detail="Aucune commande trouvée",
         )
-    return Order.buyer_id == user_id
+    return JSONResponse(
+        content=jsonable_encoder([order.to_dict() for order in orders]),
+        status_code=200,
+    )

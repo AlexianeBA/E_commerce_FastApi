@@ -1,56 +1,90 @@
-from typing import List
+from datetime import date
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
 from models import ProductIn, ProductModel
-from tables import Product
+from tables import Product, Review
 from fastapi.responses import JSONResponse
 from routes.auth import get_current_active_dealer, get_current_user
 from tables import User
+
 
 router = APIRouter()
 
 
 @router.get("/products", response_model=List[ProductModel])
-async def get_all_products() -> JSONResponse:
-    products = await Product.objects().run()
-    if products:
-        return JSONResponse(
-            content=[
-                {
-                    "id": product["id"],
-                    "name": product["name"],
-                    "price": float(product["price"]),
-                    "stock": product["stock"],
-                }
-                for product in products
-            ]
-        )
-    else:
-        return JSONResponse(
-            content={"message": "Aucun produit trouvé"}, status_code=404
-        )
-
-
-@router.get("/products_of_saler", response_model=List[ProductModel])
-async def get_dealer_products(
-    current_user: User = Depends(get_current_user),
+async def get_all_products(
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    category: Optional[str] = None,
+    in_stock: Optional[bool] = None,
+    on_sale: Optional[bool] = None,
+    is_new: Optional[bool] = None,
+    description: Optional[str] = None,
+    image_url: Optional[str] = None,
+    discount: Optional[int] = None,
 ) -> JSONResponse:
-    products = await Product.objects().where(Product.user_id == current_user.id).run()
+    products_query = Product.objects()
+
+    if min_price is not None:
+        products_query = products_query.where(Product.price >= min_price)
+
+    if max_price is not None:
+        products_query = products_query.where(Product.price <= max_price)
+
+    if category is not None:
+        products_query = products_query.where(Product.category == category)
+
+    if in_stock is not None:
+        products_query = products_query.where(Product.in_stock == in_stock)
+
+    if on_sale is not None:
+        products_query = products_query.where(Product.on_sale == on_sale)
+
+    if is_new is not None:
+        products_query = products_query.where(Product.is_new == is_new)
+
+    if description is not None:
+        products_query = products_query.where(Product.description == description)
+
+    if image_url is not None:
+        products_query = products_query.where(Product.image_url == image_url)
+
+    if discount is not None:
+        products_query = products_query.where(Product.discount == discount)
+
+    products = await products_query.run()
+
     if products:
+        product_list = []
+        for product in products:
+            username = await product.username
+            product_dict = product.to_dict()
+            product_dict["username_saler"] = username
+            reviews = (
+                await Review.objects().where(Review.product_id == product.id).run()
+            )
+            product_dict["reviews"] = [review.to_dict() for review in reviews]
+
+            if product.discount_end_date is not None:
+                product_dict["discount_end_date"] = (
+                    product.discount_end_date.isoformat()
+                )
+            if product.discount > 0 and (
+                product.discount_end_date is None
+                or product.discount_end_date >= date.today()
+            ):
+                product_dict["price"] = product.price * (1 - product.discount / 100)
+            product_list.append(product_dict)  # Move this line inside the for loop
+
         return JSONResponse(
-            content=[
-                {
-                    "id": product["id"],
-                    "name": product["name"],
-                    "price": float(product["price"]),
-                    "stock": product["stock"],
-                }
-                for product in products
-            ]
+            content=product_list,
+            status_code=200,
         )
     else:
         return JSONResponse(
-            content={"message": "Aucun produit trouvé"}, status_code=404
+            content={"message": "Aucun produit trouvé"},
+            status_code=404,
         )
 
 
@@ -69,10 +103,15 @@ async def get_product_details(
         raise HTTPException(status_code=404, detail="Produit non trouvé")
     return JSONResponse(
         {
-            "id": product.id,
-            "name": product.name,
-            "price": float(product.price),
-            "stock": product.stock,
+            "id": product["id"],
+            "name": product["name"],
+            "price": float(product["price"]),
+            "stock": product["stock"],
+            "category": product["category"],
+            "rating": product["rating"],
+            "in_stock": product["in_stock"],
+            "on_sale": product["on_sale"],
+            "is_new": product["is_new"],
         }
     )
 
@@ -89,7 +128,16 @@ async def create_product(
         name=product_data.name,
         price=product_data.price,
         stock=product_data.stock,
+        category=product_data.category,
         user_id=current_user.id,
+        rating=product_data.rating,
+        in_stock=product_data.in_stock,
+        on_sale=product_data.on_sale,
+        is_new=product_data.is_new,
+        description=product_data.description,
+        image_url=product_data.image_url,
+        discount=product_data.discount,
+        discount_end_date=product_data.discount_end_date,
     )
     await product.save().run()
     return JSONResponse(
@@ -98,8 +146,17 @@ async def create_product(
             "name": product.name,
             "price": product.price,
             "stock": product.stock,
+            "category": product.category,
+            "rating": product.rating,
+            "in_stock": product.in_stock,
+            "on_sale": product.on_sale,
+            "is_new": product.is_new,
+            "description": product.description,
+            "image_url": product.image_url,
+            "discount": product.discount,
+            "discount_end_date": product.discount_end_date.isoformat(),
             "message": "Produit créé avec succès",
-            "id du vendeur": f"{current_user.id}",
+            "nom du vendeur": f"{current_user.username}",
         },
         status_code=201,
     )

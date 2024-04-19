@@ -1,5 +1,13 @@
 from piccolo.table import Table
-from piccolo.columns import Varchar, Integer, Boolean, Timestamp, Serial, ForeignKey
+from piccolo.columns import (
+    Varchar,
+    Integer,
+    Boolean,
+    Timestamp,
+    Serial,
+    ForeignKey,
+    Date,
+)
 from enum import Enum
 
 
@@ -7,6 +15,32 @@ class UserType(str, Enum):
     buyer = "buyer"
     saler = "saler"
     admin = "admin"
+
+
+class Category(str, Enum):
+    informatique = "informatique"
+    telephonie = "telephonie"
+    electromenager = "electromenager"
+    mode = "mode"
+    beaute = "beaute"
+    maison = "maison"
+    jardin = "jardin"
+    sport = "sport"
+    auto = "auto"
+    moto = "moto"
+    bricolage = "bricolage"
+    animalerie = "animalerie"
+    jouets = "jouets"
+    enfant = "enfant"
+    culture = "culture"
+    loisirs = "loisirs"
+    livres = "livres"
+    musique = "musique"
+    films = "films"
+    instruments = "instruments"
+    materiel_professionnel = "materiel_professionnel"
+    services = "services"
+    autres = "autres"
 
 
 class User(Table, tablename="auth_user"):
@@ -28,4 +62,42 @@ class Product(Table, tablename="dashboard_product"):
     price = Integer()
     stock = Integer()
     user_id = ForeignKey(User)
-    category = Varchar()
+    category = Varchar(length=255, choices=Category, default=Category.autres.value)
+    rating = Integer()
+    in_stock = Boolean(default=True)
+    on_sale = Boolean(default=False)
+    is_new = Boolean(default=False)
+    description = Varchar()
+    image_url = Varchar()
+    discount = Integer(default=0)
+    discount_end_date = Date()
+
+    @property
+    async def username(self):
+        user = await User.objects().where(User.id == self.user_id).first().run()
+        return user.username if user else None
+
+
+class Review(Table, tablename="review_product"):
+    id = Serial(null=False, primary_key=True)
+    user_id = ForeignKey(User)
+    product_id = ForeignKey(Product)
+    rating = Integer()
+    comment = Varchar()
+
+
+class Order(Table, tablename="order_product"):
+    id = Serial(null=False, primary_key=True)
+    buyer_id = ForeignKey(User)
+    total = Integer()
+    created_at = Timestamp()
+
+
+class OrderItem(Table, tablename="order_item"):
+    id = Serial(null=False, primary_key=True)
+    order_id = ForeignKey(Order)
+    product_id = ForeignKey(Product)
+    quantity = Integer()
+    price = Integer()
+    total = Integer()
+    created_at = Timestamp()

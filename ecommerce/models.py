@@ -9,12 +9,22 @@ class ProductModel(BaseModel):
     name: str
     price: int
     stock: int
+    description: str
 
 
 class ProductIn(BaseModel):
     name: str
     price: int
     stock: int
+    category: str
+    rating: int
+    on_sale: bool
+    is_new: bool
+    in_stock: bool
+    description: str
+    image_url: str
+    discount: Optional[int] = None
+    discount_end_date: Optional[datetime] = None
 
 
 class UserType(str, Enum):
@@ -68,9 +78,18 @@ class Cart(BaseModel):
     created_at: datetime
 
 
-class Order(BaseModel):
+class OrderItemModel(BaseModel):
+    product_id: int
+    quantity: int
+
+
+class OrderModel(BaseModel):
     id: int
     buyer_id: int
-    items: List[CartItem]
-    total: float
-    created_at: datetime
+    items: List[OrderItemModel]
+
+
+class ReviewModel(BaseModel):
+    product_id: int
+    rating: int
+    comment: str
