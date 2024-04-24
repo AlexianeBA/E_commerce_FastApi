@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import users, products, auth, cart, reviews
+from ecommerce.routes import users, products, auth, cart, reviews
 
 
 app = FastAPI()

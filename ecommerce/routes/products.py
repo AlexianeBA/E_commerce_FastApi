@@ -2,11 +2,10 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from models.product_models import ProductIn, ProductModel
-from tables import Product, Review
+from ecommerce.models.product_models import ProductIn, ProductModel
+from ecommerce.tables import Product, Review, User
 from fastapi.responses import JSONResponse
-from routes.auth import get_current_active_dealer, get_current_user
-from tables import User
+from ecommerce.routes.auth import get_current_active_dealer, get_current_user
 
 
 router = APIRouter()

@@ -2,10 +2,10 @@ from typing import List
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from models.user_models import UserUpdate, UserResponse, UserRequest
-from tables import User
-from settings import pwd_context
-from routes.auth import get_current_user
+from ecommerce.models.user_models import UserUpdate, UserResponse, UserRequest
+from ecommerce.tables import User
+from ecommerce.settings import pwd_context
+from ecommerce.routes.auth import get_current_user
 
 router = APIRouter()
 
