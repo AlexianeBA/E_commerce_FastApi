@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from models import ProductIn, ProductModel
+from models.product_models import ProductIn, ProductModel
 from tables import Product, Review
 from fastapi.responses import JSONResponse
 from routes.auth import get_current_active_dealer, get_current_user

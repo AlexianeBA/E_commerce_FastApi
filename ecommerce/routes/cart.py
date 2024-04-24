@@ -4,7 +4,7 @@ from typing import List
 
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from models import CartItem, Cart
+from models.cart_models import CartItem, Cart
 from routes.auth import get_current_active_buyer, get_current_user
 from tables import Product, Order, OrderItem
 from typing import List

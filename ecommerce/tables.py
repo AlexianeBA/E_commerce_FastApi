@@ -1,3 +1,4 @@
+import random
 from piccolo.table import Table
 from piccolo.columns import (
     Varchar,
@@ -8,13 +9,14 @@ from piccolo.columns import (
     ForeignKey,
     Date,
 )
+from datetime import datetime
 from enum import Enum
+import pandas as pd
 
 
 class UserType(str, Enum):
     buyer = "buyer"
     saler = "saler"
-    admin = "admin"
 
 
 class Category(str, Enum):
@@ -43,10 +45,14 @@ class Category(str, Enum):
     autres = "autres"
 
 
+class Gender(str, Enum):
+    female = "female"
+    male = "male"
+
+
 class User(Table, tablename="auth_user"):
     id = Serial(null=False, primary_key=True)
-    first_name = Varchar(length=255, default="")
-    last_name = Varchar(length=255, default="")
+    name = Varchar(length=255, default="")
     username = Varchar(length=255, default="")
     email = Varchar(length=255, default="")
     password = Varchar(length=255, default="")
@@ -54,6 +60,9 @@ class User(Table, tablename="auth_user"):
     is_staff = Boolean(default=False)
     is_active = Boolean(default=True)
     role = Varchar(length=255, choices=UserType, default=UserType.buyer.value)
+    date_of_birth = Date()
+    gender = Varchar(length=255, choices=Gender, default=Gender.male.value)
+    location = Varchar(length=255, default="")
 
 
 class Product(Table, tablename="dashboard_product"):

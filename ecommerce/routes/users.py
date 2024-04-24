@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from models import UserUpdate, UserResponse, UserRequest
+from models.user_models import UserUpdate, UserResponse, UserRequest
 from tables import User
 from settings import pwd_context
 from routes.auth import get_current_user
@@ -62,10 +62,8 @@ async def update_user(
             user.username = user_data.username
         if user_data.password is not None:
             user.password = pwd_context.hash(user_data.password)
-        if user_data.first_name is not None:
-            user.first_name = user_data.first_name
-        if user_data.last_name is not None:
-            user.last_name = user_data.last_name
+        if user_data.name is not None:
+            user.name = user_data.name
         if user_data.email is not None:
             user.email = user_data.email
         await user.save().run()

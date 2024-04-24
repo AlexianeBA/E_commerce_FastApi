@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Request, status, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.security.utils import get_authorization_scheme_param
+
 import jwt as jwt
-from models import Login
+from models.auth_models import Login
 from tables import User
 from settings import pwd_context, SECRET_KEY, ALGORITHM
 from typing import Optional

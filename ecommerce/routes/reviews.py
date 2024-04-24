@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 
-from models import ReviewModel
+from models.review_models import ReviewModel
 from routes.auth import get_current_active_buyer, get_current_user
 from tables import Product, Review
 

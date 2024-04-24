@@ -10,5 +10,5 @@ DB = PostgresEngine(
         "port": 5432,
     }
 )
-
+DATABASE_CONFIG = {"default": DB}
 APP_REGISTRY = AppRegistry(apps=["piccolo_app"])
