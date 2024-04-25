@@ -4,9 +4,9 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import jwt as jwt
-from ecommerce.models.auth_models import Login
-from ecommerce.tables import User
-from ecommerce.settings import pwd_context, SECRET_KEY, ALGORITHM
+from models.auth_models import Login
+from tables import User
+from settings import pwd_context, SECRET_KEY, ALGORITHM
 from typing import Optional
 
 router = APIRouter()

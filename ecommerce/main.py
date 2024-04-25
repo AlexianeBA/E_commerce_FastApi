@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from ecommerce.routes import users, products, auth, cart, reviews
+from routes import users, products, auth, cart, reviews, sale, purchase
 
 
 app = FastAPI()
@@ -10,3 +10,5 @@ app.include_router(products.router, tags=["products"])
 app.include_router(auth.router, tags=["auth"])
 app.include_router(cart.router, tags=["cart"])
 app.include_router(reviews.router, tags=["reviews"])
+app.include_router(sale.router, tags=["sale"])
+app.include_router(purchase.router, tags=["purchase"])

@@ -80,6 +80,8 @@ class Product(Table, tablename="dashboard_product"):
     image_url = Varchar()
     discount = Integer(default=0)
     discount_end_date = Date()
+    date_created = Timestamp(default=datetime.now())
+    seller_id = ForeignKey(User)
 
     @property
     async def username(self):
@@ -110,3 +112,27 @@ class OrderItem(Table, tablename="order_item"):
     price = Integer()
     total = Integer()
     created_at = Timestamp()
+
+
+class Sale(Table, tablename="sale_product"):
+    id = Serial(null=False, primary_key=True)
+    category = Varchar(length=255, choices=Category, default=Category.autres.value)
+    discount = Integer()
+    start_date = Date()
+    end_date = Date()
+
+    @property
+    async def products(self):
+        products = (
+            await Product.objects().where(Product.category == self.category).run()
+        )
+        return products
+
+
+class Purchase(Table, tablename="purchase_product"):
+    id = Serial(null=False, primary_key=True)
+    buyer_id = ForeignKey(User)
+    product_id = ForeignKey(Product)
+    quantity = Integer()
+    total = Integer()
+    purchase_date = Timestamp()

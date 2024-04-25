@@ -23,7 +23,7 @@ DATABASE_CONFIG = {"default": DB}
 
 
 async def main():
-    df = pd.read_csv("ecommerce/datas/users/amazon_prime_users.csv")
+    df = pd.read_csv("datas/users/amazon_prime_users.csv")
 
     for _, row in df.iterrows():
         user = User(
@@ -34,6 +34,7 @@ async def main():
             date_of_birth=row["Date of Birth"],
             gender=row["Gender"],
             location=row["Location"],
+            role=random.choice([UserType.buyer, UserType.saler]),
         )
         await user.save().run()
         print(user)

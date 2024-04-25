@@ -19,7 +19,7 @@ DATABASE_CONFIG = {"default": DB}
 
 
 async def main():
-    df = pd.read_csv("ecommerce/datas/products/Air Conditioners.csv")
+    df = pd.read_csv("datas/products/Air Conditioners.csv")
     print(df.columns)
 
     user_ids = User.select(User.id).run_sync()

@@ -2,10 +2,10 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from ecommerce.models.product_models import ProductIn, ProductModel
-from ecommerce.tables import Product, Review, User
+from models.product_models import ProductIn, ProductModel
+from tables import Product, Review, User
 from fastapi.responses import JSONResponse
-from ecommerce.routes.auth import get_current_active_dealer, get_current_user
+from routes.auth import get_current_active_dealer, get_current_user
 
 
 router = APIRouter()
@@ -22,6 +22,7 @@ async def get_all_products(
     description: Optional[str] = None,
     image_url: Optional[str] = None,
     discount: Optional[int] = None,
+    created_at: Optional[date] = None,
 ) -> JSONResponse:
     products_query = Product.objects()
 
@@ -51,6 +52,8 @@ async def get_all_products(
 
     if discount is not None:
         products_query = products_query.where(Product.discount == discount)
+    if created_at is not None:
+        products_query = products_query.where(Product.date_created == created_at)
 
     products = await products_query.run()
 
@@ -59,6 +62,8 @@ async def get_all_products(
         for product in products:
             username = await product.username
             product_dict = product.to_dict()
+            if product.date_created is not None:
+                product_dict["date_created"] = product.date_created.isoformat()
             product_dict["username_saler"] = username
             reviews = (
                 await Review.objects().where(Review.product_id == product.id).run()
@@ -74,7 +79,7 @@ async def get_all_products(
                 or product.discount_end_date >= date.today()
             ):
                 product_dict["price"] = product.price * (1 - product.discount / 100)
-            product_list.append(product_dict)  # Move this line inside the for loop
+            product_list.append(product_dict)
 
         return JSONResponse(
             content=product_list,

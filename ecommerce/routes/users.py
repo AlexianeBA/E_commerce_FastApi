@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from ecommerce.models.user_models import UserUpdate, UserResponse, UserRequest
-from ecommerce.tables import User
-from ecommerce.settings import pwd_context
-from ecommerce.routes.auth import get_current_user
+from models.user_models import UserUpdate, UserResponse, UserRequest
+from tables import User
+from settings import pwd_context
+from routes.auth import get_current_user
 
 router = APIRouter()
 
@@ -14,8 +14,11 @@ router = APIRouter()
     "/users",
     response_model=List[UserResponse],
 )
-async def get_users() -> JSONResponse:
-    users = await User.select().run()
+async def get_users(role: Optional[str] = None) -> JSONResponse:
+    if role:
+        users = await User.objects().where(User.role == role).run()
+    else:
+        users = await User.select().run()
     return JSONResponse(
         [
             {
@@ -36,12 +39,13 @@ async def create_user(user_data: UserRequest) -> JSONResponse:
     user = User(
         username=user_data.username,
         password=hashed_password,
-        first_name=user_data.first_name,
-        last_name=user_data.last_name,
+        name=user_data.name,
         email=user_data.email,
         is_superuser=user_data.is_superuser,
         is_staff=user_data.is_staff,
-        is_active=user_data.is_active,
+        date_of_birth=user_data.date_of_birth,
+        gender=user_data.gender,
+        location=user_data.location,
         role=user_data.role,
     )
     await user.save().run()

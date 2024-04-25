@@ -9,6 +9,8 @@ class ProductModel(BaseModel):
     price: int
     stock: int
     description: str
+    created_at: datetime
+    seller_id: int
 
 
 class ProductIn(BaseModel):
