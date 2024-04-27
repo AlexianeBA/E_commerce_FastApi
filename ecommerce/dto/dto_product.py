@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class ProductModel(BaseModel):
+class ProductResponse(BaseModel):
     id: int
     name: str
     price: int
@@ -13,7 +13,7 @@ class ProductModel(BaseModel):
     seller_id: int
 
 
-class ProductIn(BaseModel):
+class ProductRequest(BaseModel):
     name: str
     price: int
     stock: int

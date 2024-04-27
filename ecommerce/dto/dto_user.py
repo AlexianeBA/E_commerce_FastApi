@@ -22,9 +22,6 @@ class UserRequest(BaseModel):
     password: str
     name: str
     email: str
-    is_superuser: bool = False
-    is_staff: bool = False
-    is_active: bool = True
     role: UserType
     date_of_birth: date
     gender: str

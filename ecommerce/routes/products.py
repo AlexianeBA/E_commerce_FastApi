@@ -2,8 +2,8 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
-from models.product_models import ProductIn, ProductModel
-from tables import Product, Review, User
+from dto.dto_product import ProductRequest, ProductResponse
+from models import Product, Review, User
 from fastapi.responses import JSONResponse
 from routes.auth import get_current_active_dealer, get_current_user
 
@@ -11,7 +11,7 @@ from routes.auth import get_current_active_dealer, get_current_user
 router = APIRouter()
 
 
-@router.get("/products", response_model=List[ProductModel])
+@router.get("/products", response_model=List[ProductResponse])
 async def get_all_products(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
@@ -122,11 +122,11 @@ async def get_product_details(
 
 @router.post(
     "/products/",
-    response_model=ProductModel,
+    response_model=ProductResponse,
     dependencies=[Depends(get_current_active_dealer)],
 )
 async def create_product(
-    product_data: ProductIn, current_user=Depends(get_current_active_dealer)
+    product_data: ProductRequest, current_user=Depends(get_current_active_dealer)
 ) -> JSONResponse:
     product = Product(
         name=product_data.name,
@@ -168,11 +168,13 @@ async def create_product(
 
 @router.put(
     "/products/{product_id}",
-    response_model=ProductModel,
+    response_model=ProductResponse,
     dependencies=[Depends(get_current_active_dealer)],
 )
 async def update_product(
-    product_id: int, product_data: ProductIn, current_user=Depends(get_current_user)
+    product_id: int,
+    product_data: ProductRequest,
+    current_user=Depends(get_current_user),
 ) -> JSONResponse:
     products = (
         await Product.objects()

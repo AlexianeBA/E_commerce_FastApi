@@ -4,9 +4,10 @@ from typing import List
 
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from models.cart_models import CartItem, Cart
+from dto.dto_cart import CartRequest, CartResponse, CartItemResponse
 from routes.auth import get_current_active_buyer, get_current_user
-from tables import Product, Order, OrderItem
+from models import Product, Order, OrderItem, Cart, PromotionalCode, User
+
 from typing import List
 
 router = APIRouter()
@@ -15,49 +16,75 @@ carts = {}
 
 
 @router.post("/cart", dependencies=[Depends(get_current_active_buyer)])
-async def add_to_cart(item: CartItem, current_user=Depends(get_current_user)) -> Cart:
-    user_id = current_user.id
+async def add_to_cart(
+    item: CartRequest, current_user=Depends(get_current_user)
+) -> CartResponse:
+    buyer_id = current_user.id
+    user = await User.objects().where(User.id == buyer_id).first().run()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
     product = await Product.objects().where(Product.id == item.product_id).first().run()
-    if product is not None and product.stock < item.quantity:
+    if product is None:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if product.stock < item.quantity:
         raise HTTPException(status_code=400, detail="Stock insuffisant")
-    if product is not None:
-        product.stock -= item.quantity
-        await product.save().run()
-    if user_id not in carts:
-        carts[user_id] = Cart(
-            id=user_id,
-            items=[item],
-            buyer_id=user_id,
-            total=0,
-            created_at=datetime.now(),
-        )
-    else:
-        carts[user_id].items.append(item)
-    return carts[user_id]
+
+    product.stock -= item.quantity
+    await product.save().run()
+
+    cart = Cart(
+        buyer_id=buyer_id,
+        product_id=product,
+        quantity=item.quantity,
+        total=int(product.price) * item.quantity,
+        created_at=datetime.now(),
+    )
+
+    await cart.save().run()
+
+    return CartResponse(
+        id=cart.id,
+        buyer_id=cart.buyer_id,
+        items=[item],
+        total=cart.total,
+        created_at=cart.created_at,
+        promotional_code=cart.promotional_code,
+    )
 
 
 @router.get(
     "/cart",
-    response_model=Cart,
     dependencies=[Depends(get_current_active_buyer)],
 )
-async def get_cart(current_user=Depends(get_current_user)) -> Cart:
+async def get_cart(current_user=Depends(get_current_user)):
     user_id = current_user.id
-    if user_id not in carts:
-        carts[user_id] = Cart(
-            id=user_id,
-            items=[],
-            buyer_id=user_id,
-            total=0,
-            created_at=datetime.now(),
-        )
-    return carts[user_id]
+    cart = await Cart.objects().where(Cart.buyer_id == user_id).first().run()
+    if cart is None:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    items = await Cart.objects().where(Cart.buyer_id == user_id).run()
+    items_response = [
+        CartItemResponse(
+            product_id=item.product_id if item.product_id is not None else 0,
+            quantity=item.quantity,
+            promotional_code=item.promotional_code,
+        ).dict()
+        for item in items
+    ]
+    return {
+        "id": cart.id,
+        "buyer_id": cart.buyer_id,
+        "items": items_response,
+        "total": cart.total,
+        "created_at": cart.created_at,
+        "promotional_code": cart.promotional_code,
+    }
 
 
 @router.delete("/cart/{item_index}", dependencies=[Depends(get_current_active_buyer)])
 async def remove_from_cart(
     item_index: int, current_user=Depends(get_current_user)
-) -> Cart:
+) -> CartResponse:
     user_id = current_user.id
     if user_id not in carts:
         raise HTTPException(
@@ -69,43 +96,6 @@ async def remove_from_cart(
         )
     del carts[user_id].items[item_index]
     return carts[user_id]
-
-
-@router.post("/checkout", dependencies=[Depends(get_current_active_buyer)])
-async def checkout(current_user=Depends(get_current_user)) -> dict:
-    buyer_id = current_user.id
-    if buyer_id not in carts:
-        raise HTTPException(status_code=404, detail="Panier non trouvé")
-
-    cart = carts[buyer_id]
-    total = 0
-    for item in cart.items:
-        product = (
-            await Product.objects().where(Product.id == item.product_id).first().run()
-        )
-        if product is not None:
-            total += product.price * item.quantity
-
-    order = Order(buyer_id=buyer_id, total=total)
-    await order.save().run()
-
-    for item in cart.items:
-        product = (
-            await Product.objects().where(Product.id == item.product_id).first().run()
-        )
-        if product is not None and product.stock < item.quantity:
-            raise HTTPException(
-                status_code=400,
-                detail="Stock insuffisant pour un ou plusieurs produits",
-            )
-
-        order_item = OrderItem(
-            order_id=order.id, product_id=item.product_id, quantity=item.quantity
-        )
-        await order_item.save().run()
-
-    carts[buyer_id].items = []
-    return {"message": "Achat effectué avec succès"}
 
 
 @router.get(
@@ -124,3 +114,67 @@ async def get_past_orders(current_user=Depends(get_current_user)) -> JSONRespons
         content=jsonable_encoder([order.to_dict() for order in orders]),
         status_code=200,
     )
+
+
+@router.delete("/cart", dependencies=[Depends(get_current_active_buyer)])
+async def clear_cart(current_user=Depends(get_current_user)):
+    user_id = current_user.id
+    cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
+    for cart_item in cart_items:
+        await cart_item.delete(force=True).run()
+
+    return {"message": "Cart cleared successfully"}
+
+
+async def process_payment(cart: Cart, user: User):
+    # Ici, vous devriez implémenter la logique de paiement réelle
+    # Après le paiement réussi, vous pouvez créer une nouvelle commande
+    order_items = []
+    total_amount = 0
+    order = Order(buyer_id=user.id, total=total_amount)
+    await order.save().run()
+
+    for item in order_items:
+        product = (
+            await Product.objects().where(Product.id == item.product_id).first().run()
+        )
+        if product is None:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        total_amount += product.price * item.quantity
+        order_item = OrderItem(
+            product_id=product,
+            quantity=item.quantity,
+            total=product.price * item.quantity,
+        )
+        order_items.append(order_item)
+
+    order = Order(
+        buyer_id=user,
+        items=order_items,
+        total=total_amount,
+        created_at=datetime.now(),
+    )
+    await order.save().run()
+    # Supprimer le panier après avoir passé la commande
+    await cart.delete(force=True).run()
+    return order
+
+
+# Endpoint pour effectuer le paiement (checkout)
+@router.post("/checkout", dependencies=[Depends(get_current_active_buyer)])
+async def checkout(current_user=Depends(get_current_user)):
+    user_id = current_user.id
+    cart = await Cart.objects().where(Cart.buyer_id == user_id).first().run()
+    if not cart:
+        raise HTTPException(status_code=404, detail="Cart not found")
+
+    user = await User.objects().where(User.id == user_id).first().run()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    order = await process_payment(cart, user)
+    return {
+        "message": "Payment processed successfully",
+        "order_id": order.id,
+    }

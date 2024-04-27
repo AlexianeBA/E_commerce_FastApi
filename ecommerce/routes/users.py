@@ -2,8 +2,8 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from models.user_models import UserUpdate, UserResponse, UserRequest
-from tables import User
+from dto.dto_user import UserUpdate, UserResponse, UserRequest
+from models import User
 from settings import pwd_context
 from routes.auth import get_current_user
 
@@ -41,8 +41,6 @@ async def create_user(user_data: UserRequest) -> JSONResponse:
         password=hashed_password,
         name=user_data.name,
         email=user_data.email,
-        is_superuser=user_data.is_superuser,
-        is_staff=user_data.is_staff,
         date_of_birth=user_data.date_of_birth,
         gender=user_data.gender,
         location=user_data.location,

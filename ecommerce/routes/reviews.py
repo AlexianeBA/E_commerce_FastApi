@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.responses import JSONResponse
 
-from models.review_models import ReviewModel
+from dto.dto_review import ReviewModel
 from routes.auth import get_current_active_buyer, get_current_user
-from tables import Product, Review
+from models import Product, Review
 
 router = APIRouter()
 
@@ -28,3 +29,24 @@ async def add_review(
     )
 
     return new_review.to_dict()
+
+
+@router.get("/reviews/{user_id}")
+async def get_reviews_by_user_id(user_id: int):
+    reviews = await Review.objects().where(Review.user_id == user_id).run()
+    return JSONResponse(content=[review.to_dict() for review in reviews])
+
+
+@router.get("/reviews/{product_id}")
+async def get_reviews_by_product_id(product_id: int):
+    reviews = await Review.objects().where(Review.product_id == product_id).run()
+    return JSONResponse(content=[review.to_dict() for review in reviews])
+
+
+@router.get("/reviews/{review_id}")
+async def get_review_by_id(review_id: int):
+    review = await Review.objects().where(Review.id == review_id).first().run()
+    if review:
+        return JSONResponse(content=review.to_dict())
+    else:
+        return JSONResponse(content={"message": "Review not found"}, status_code=404)

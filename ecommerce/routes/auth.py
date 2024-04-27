@@ -4,8 +4,8 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import jwt as jwt
-from models.auth_models import Login
-from tables import User
+from dto.dto_auth import Login
+from models import User
 from settings import pwd_context, SECRET_KEY, ALGORITHM
 from typing import Optional
 

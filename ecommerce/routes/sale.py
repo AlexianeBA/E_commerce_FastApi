@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from models.sale_models import SaleIn
-from tables import Sale, Product
+from dto.dto_sale import SaleIn
+from models import Sale, Product
 
 router = APIRouter()
 
