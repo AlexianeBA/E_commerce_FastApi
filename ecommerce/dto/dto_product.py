@@ -10,7 +10,7 @@ class ProductResponse(BaseModel):
     stock: int
     description: str
     created_at: datetime
-    seller_id: int
+    seller_id: Optional[int]
 
 
 class ProductRequest(BaseModel):

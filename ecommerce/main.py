@@ -1,5 +1,15 @@
 from fastapi import FastAPI
-from routes import users, products, auth, cart, reviews, sale, purchase, promo_code
+import uvicorn
+from routes import (
+    users,
+    products,
+    auth,
+    cart,
+    reviews,
+    sale,
+    purchase,
+    promo_code,
+)
 
 
 app = FastAPI()
@@ -13,3 +23,5 @@ app.include_router(reviews.router, tags=["reviews"])
 app.include_router(sale.router, tags=["sale"])
 app.include_router(purchase.router, tags=["purchase"])
 app.include_router(promo_code.router, tags=["promo_code"])
+
+uvicorn.run(app, host="localhost", port=8000)

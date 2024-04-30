@@ -11,6 +11,19 @@ from routes.auth import get_current_active_dealer, get_current_user
 router = APIRouter()
 
 
+from typing import List
+
+
+@router.get("/products/search", response_model=List[ProductResponse])
+async def search_products(name: str):
+    products_query = Product.objects().where(Product.name.ilike(f"%{name}%"))
+    products = await products_query.run()
+    return [
+        ProductResponse(**product.to_dict(), created_at=product.date_created)
+        for product in products
+    ]
+
+
 @router.get("/products", response_model=List[ProductResponse])
 async def get_all_products(
     min_price: Optional[float] = None,
