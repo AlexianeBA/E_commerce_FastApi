@@ -25,7 +25,7 @@ async def get_buyers_info(seller_id: int) -> JSONResponse:
         await Purchase.select().where(Purchase.product_id.is_in(product_ids)).run()
     )
 
-    buyer_ids = set(purchase.buyer_id for purchase in purchases)
+    buyer_ids = set(purchase.user_ for purchase in purchases)
     buyers = await User.select().where(User.id.is_in(list(buyer_ids))).run()
 
     buyer_info = []

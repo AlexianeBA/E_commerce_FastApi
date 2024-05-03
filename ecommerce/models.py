@@ -64,6 +64,11 @@ class User(Table, tablename="auth_user"):
     gender = Varchar(length=255, choices=Gender, default=Gender.male.value)
     location = Varchar(length=255, default="")
 
+    def to_dict(self):
+        user_dict = super().to_dict()
+        user_dict["date_of_birth"] = self.date_of_birth.isoformat()
+        return user_dict
+
 
 class Product(Table, tablename="dashboard_product"):
     id = Serial(null=False, primary_key=True)
@@ -136,3 +141,35 @@ class Purchase(Table, tablename="purchase_product"):
     quantity = Integer()
     total = Integer()
     purchase_date = Timestamp()
+
+
+class Cart(Table, tablename="cart_product"):
+    id = Serial(null=False, primary_key=True)
+    buyer_id = ForeignKey(User)
+    product_id = ForeignKey(Product)
+    quantity = Integer()
+    total = Integer()
+    created_at = Timestamp()
+    promotional_code = Varchar()
+
+
+class PromotionalCode(Table, tablename="promo_code"):
+    id = Serial(null=False, primary_key=True)
+    code = Varchar()
+    discount = Integer()
+    start_date = Date()
+    end_date = Date()
+
+
+class OrderStatus(str, Enum):
+    pending = "pending"
+    delivering = "delivering"
+    delivered = "delivered"
+    cancelled = "cancelled"
+
+
+class OrderPassed(Table, tablename="order_passed"):
+    id = Serial(null=False, primary_key=True)
+    buyer_id = ForeignKey(User)
+    status = Varchar(length=255, choices=OrderStatus, default=OrderStatus.pending.value)
+    delivery_date = Timestamp()

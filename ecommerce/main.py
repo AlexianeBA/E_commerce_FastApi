@@ -9,6 +9,7 @@ from routes import (
     sale,
     purchase,
     promo_code,
+    smtp,
 )
 
 
@@ -23,5 +24,6 @@ app.include_router(reviews.router, tags=["reviews"])
 app.include_router(sale.router, tags=["sale"])
 app.include_router(purchase.router, tags=["purchase"])
 app.include_router(promo_code.router, tags=["promo_code"])
+app.include_router(smtp.router, tags=["smtp"])
 
 uvicorn.run(app, host="localhost", port=8000)

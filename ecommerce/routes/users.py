@@ -22,7 +22,6 @@ async def get_users(role: Optional[str] = None) -> JSONResponse:
     return JSONResponse(
         [
             {
-                "message": "Liste de tous les utilisateurs:",
                 "id": user["id"],
                 "username": user["username"],
                 "password": user["password"],

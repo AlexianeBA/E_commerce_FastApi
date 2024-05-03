@@ -1,12 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, status, Depends
 from typing import List
 
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from dto.dto_cart import CartRequest, CartResponse, CartItemResponse
+from dto.dto_payment import PaymentRequest, PaymentResponse
 from routes.auth import get_current_active_buyer, get_current_user
-from models import Product, Order, OrderItem, Cart, PromotionalCode, User
+from models import Product, Order, OrderItem, User, Cart, OrderPassed, OrderStatus
 
 from typing import List
 
@@ -35,7 +36,7 @@ async def add_to_cart(
 
     cart = Cart(
         buyer_id=buyer_id,
-        product_id=product,
+        product_id=item.product_id,
         quantity=item.quantity,
         total=int(product.price) * item.quantity,
         created_at=datetime.now(),
@@ -67,7 +68,7 @@ async def get_cart(current_user=Depends(get_current_user)):
         CartItemResponse(
             product_id=item.product_id if item.product_id is not None else 0,
             quantity=item.quantity,
-            promotional_code=item.promotional_code,
+            promotional_code=cart.promotional_code,
         ).dict()
         for item in items
     ]
@@ -126,55 +127,20 @@ async def clear_cart(current_user=Depends(get_current_user)):
     return {"message": "Cart cleared successfully"}
 
 
-async def process_payment(cart: Cart, user: User):
-    # Ici, vous devriez implémenter la logique de paiement réelle
-    # Après le paiement réussi, vous pouvez créer une nouvelle commande
-    order_items = []
-    total_amount = 0
-    order = Order(buyer_id=user.id, total=total_amount)
-    await order.save().run()
-
-    for item in order_items:
-        product = (
-            await Product.objects().where(Product.id == item.product_id).first().run()
-        )
-        if product is None:
-            raise HTTPException(status_code=404, detail="Product not found")
-
-        total_amount += product.price * item.quantity
-        order_item = OrderItem(
-            product_id=product,
-            quantity=item.quantity,
-            total=product.price * item.quantity,
-        )
-        order_items.append(order_item)
-
-    order = Order(
-        buyer_id=user,
-        items=order_items,
-        total=total_amount,
-        created_at=datetime.now(),
-    )
-    await order.save().run()
-    # Supprimer le panier après avoir passé la commande
-    await cart.delete(force=True).run()
-    return order
-
-
-# Endpoint pour effectuer le paiement (checkout)
 @router.post("/checkout", dependencies=[Depends(get_current_active_buyer)])
 async def checkout(current_user=Depends(get_current_user)):
     user_id = current_user.id
-    cart = await Cart.objects().where(Cart.buyer_id == user_id).first().run()
-    if not cart:
-        raise HTTPException(status_code=404, detail="Cart not found")
+    cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
 
-    user = await User.objects().where(User.id == user_id).first().run()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+    if not cart_items:
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
-    order = await process_payment(cart, user)
-    return {
-        "message": "Payment processed successfully",
-        "order_id": order.id,
-    }
+    for cart_item in cart_items:
+        await cart_item.delete(force=True).run()
+    order = OrderPassed(
+        buyer_id=user_id,
+        status=OrderStatus.pending,
+        delivery_date=datetime.now() + timedelta(days=3),
+    )
+    await order.save().run()
+    return {"message": "Checkout successful, cart cleared"}
