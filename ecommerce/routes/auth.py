@@ -5,7 +5,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import jwt as jwt
 from dto.dto_auth import Login
+from dto.dto_smtp import EmailRequest
 from models import User
+from routes.smtp import send_email
 from settings import pwd_context, SECRET_KEY, ALGORITHM
 from typing import Optional
 
@@ -79,3 +81,31 @@ async def login(login_data: Login) -> JSONResponse:
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     content = {"access_token": encoded_jwt, "token_type": "bearer", "sub": user.id}
     return JSONResponse(content=content)
+
+
+@router.post("/forgot_password")
+async def forgot_password(email: str):
+    user = await User.objects().where(User.email == email).first().run()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    reset_link = (
+        f"http://localhost:8000/docs#/auth/reset_password_reset_password_post/{user.id}"
+    )
+    email_request = EmailRequest(
+        receiver_email=user.email,
+        subject="Reset your password",
+        body=f"Click on the following link to reset your password: {reset_link}",
+    )
+    await send_email(email_request)
+    return {"message": "Password reset email sent successfully"}
+
+
+@router.post("/reset_password")
+async def reset_password(user_id: int, new_password: str):
+    user = await User.objects().where(User.id == user_id).first().run()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    hashed_password = pwd_context.hash(new_password)
+    user.password = hashed_password
+    await user.save().run()
+    return {"message": "Password reset successfully"}

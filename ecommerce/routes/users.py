@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from dto.dto_user import UserUpdate, UserResponse, UserRequest
+from dto.dto_smtp import EmailRequest
+from routes.smtp import send_email
 from models import User
 from settings import pwd_context
 from routes.auth import get_current_user
@@ -45,8 +47,26 @@ async def create_user(user_data: UserRequest) -> JSONResponse:
         location=user_data.location,
         role=user_data.role,
     )
+    confirmation_url = f"http://localhost:8000/docs#/users/confirm_user_confirm__user_id__get/{user.id}"
     await user.save().run()
+    email_request = EmailRequest(
+        receiver_email=user.email,
+        subject="Please confirm your account",
+        body=f"Welcome {user.username}, please confirm your account by clicking on the following URL: {confirmation_url}",
+    )
+    await send_email(email_request)
     return JSONResponse(content=user.to_dict(), status_code=status.HTTP_200_OK)
+
+
+@router.get("/confirm/{user_id}")
+async def confirm_user(user_id: str):
+    user = await User.objects().where(User.id == user_id).first().run()
+    if user:
+        user.is_active = True
+        await user.save().run()
+        return JSONResponse({"message": "User confirmed successfully"})
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
 
 
 @router.put(

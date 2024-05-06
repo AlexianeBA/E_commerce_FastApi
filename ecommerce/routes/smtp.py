@@ -13,7 +13,7 @@ password = "uHUmWHV9uiUdgrVA"
 
 
 @router.post("/send_email")
-async def send_email(email, password, email_request: EmailRequest):
+async def send_email(email_request: EmailRequest):
     try:
         msg = MIMEMultipart()
         msg["From"] = email
