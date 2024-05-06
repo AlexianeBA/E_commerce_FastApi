@@ -6,10 +6,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from dto.dto_cart import CartRequest, CartResponse, CartItemResponse
 from dto.dto_payment import PaymentRequest, PaymentResponse
+from dto.dto_smtp import EmailRequest
 from routes.auth import get_current_active_buyer, get_current_user
 from models import Product, Order, OrderItem, User, Cart, OrderPassed, OrderStatus
 
 from typing import List
+
+from routes.smtp import send_email
 
 router = APIRouter()
 
@@ -135,12 +138,30 @@ async def checkout(current_user=Depends(get_current_user)):
     if not cart_items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
+    order_summary = "Order Summary:\n"
     for cart_item in cart_items:
+        product = (
+            await Product.objects()
+            .where(Product.id == cart_item.product_id)
+            .first()
+            .run()
+        )
+        if product is not None:
+            order_summary += (
+                f"Product: {product.name}, Quantity: {cart_item.quantity}\n"
+            )
         await cart_item.delete(force=True).run()
+
     order = OrderPassed(
         buyer_id=user_id,
         status=OrderStatus.pending,
         delivery_date=datetime.now() + timedelta(days=3),
     )
     await order.save().run()
+    email_request = EmailRequest(
+        receiver_email=current_user.email,
+        subject="Order Summary",
+        body=f"Hello {current_user.username},\n\n{order_summary}\n\nYour order will be delivered by {order.delivery_date}.",
+    )
+    await send_email(email_request)
     return {"message": "Checkout successful, cart cleared"}
