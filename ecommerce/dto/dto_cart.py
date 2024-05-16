@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -23,3 +23,7 @@ class CartItemResponse(BaseModel):
     product_id: int
     quantity: int
     promotional_code: Optional[str]
+
+
+class RefundRequest(BaseModel):
+    product_ids: List[int]
