@@ -9,7 +9,16 @@ from dto.dto_cart import CartRequest, CartResponse, CartItemResponse, RefundRequ
 from dto.dto_payment import PaymentRequest, PaymentResponse
 from dto.dto_smtp import EmailRequest
 from routes.auth import get_current_active_buyer, get_current_user
-from models import Product, Order, OrderItem, User, Cart, OrderPassed, OrderStatus
+from models import (
+    Product,
+    Order,
+    OrderItem,
+    User,
+    Cart,
+    OrderPassed,
+    OrderStatus,
+    OrderPassed,
+)
 
 from typing import List
 
@@ -86,30 +95,13 @@ async def get_cart(current_user=Depends(get_current_user)):
     }
 
 
-@router.delete("/cart/{item_index}", dependencies=[Depends(get_current_active_buyer)])
-async def remove_from_cart(
-    item_index: int, current_user=Depends(get_current_user)
-) -> CartResponse:
-    user_id = current_user.id
-    if user_id not in carts:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found"
-        )
-    if item_index >= len(carts[user_id].items) or item_index < 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found in cart"
-        )
-    del carts[user_id].items[item_index]
-    return carts[user_id]
-
-
 @router.get(
     "/past_orders",
     dependencies=[Depends(get_current_active_buyer)],
 )
 async def get_past_orders(current_user=Depends(get_current_user)) -> JSONResponse:
     user_id = current_user.id
-    orders = await Order.objects().where(Order.buyer_id == user_id).run()
+    orders = await OrderPassed.objects().where(OrderPassed.buyer_id == user_id).run()
     if not orders:
         raise HTTPException(
             status_code=400,
@@ -121,16 +113,6 @@ async def get_past_orders(current_user=Depends(get_current_user)) -> JSONRespons
     )
 
 
-@router.delete("/cart", dependencies=[Depends(get_current_active_buyer)])
-async def clear_cart(current_user=Depends(get_current_user)):
-    user_id = current_user.id
-    cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
-    for cart_item in cart_items:
-        await cart_item.delete(force=True).run()
-
-    return {"message": "Cart cleared successfully"}
-
-
 @router.post("/checkout", dependencies=[Depends(get_current_active_buyer)])
 async def checkout(current_user=Depends(get_current_user)):
     user_id = current_user.id
@@ -140,6 +122,7 @@ async def checkout(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Cart is empty")
 
     order_summary = "Order Summary:\n"
+    total = 0
     for cart_item in cart_items:
         product = (
             await Product.objects()
@@ -148,6 +131,7 @@ async def checkout(current_user=Depends(get_current_user)):
             .run()
         )
         if product is not None:
+            total += cart_item.total
             order_summary += (
                 f"Product: {product.name}, Quantity: {cart_item.quantity}\n"
             )
@@ -157,6 +141,7 @@ async def checkout(current_user=Depends(get_current_user)):
         buyer_id=user_id,
         status=OrderStatus.delivering,
         delivery_date=datetime.now() + timedelta(days=3),
+        total=total,
     )
     await order.save().run()
     email_request = EmailRequest(
@@ -164,7 +149,7 @@ async def checkout(current_user=Depends(get_current_user)):
         subject="Order Summary",
         body=f"Hello {current_user.username},\n\n{order_summary}\n\nYour order will be delivered by {order.delivery_date}.",
     )
-    await send_email(email_request)
+    # await send_email(email_request)
     return {"message": "Checkout successful, cart cleared"}
 
 
@@ -255,3 +240,30 @@ async def refund_order(
             )
 
     return {"message": "Refund request received, we will process it shortly"}
+
+
+@router.delete("/cart/{item_index}", dependencies=[Depends(get_current_active_buyer)])
+async def remove_from_cart(
+    item_index: int, current_user=Depends(get_current_user)
+) -> CartResponse:
+    user_id = current_user.id
+    if user_id not in carts:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found"
+        )
+    if item_index >= len(carts[user_id].items) or item_index < 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found in cart"
+        )
+    del carts[user_id].items[item_index]
+    return carts[user_id]
+
+
+@router.delete("/cart", dependencies=[Depends(get_current_active_buyer)])
+async def clear_cart(current_user=Depends(get_current_user)):
+    user_id = current_user.id
+    cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
+    for cart_item in cart_items:
+        await cart_item.delete(force=True).run()
+
+    return {"message": "Cart cleared successfully"}

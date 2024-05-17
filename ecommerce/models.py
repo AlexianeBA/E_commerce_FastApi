@@ -172,4 +172,10 @@ class OrderPassed(Table, tablename="order_passed"):
     id = Serial(null=False, primary_key=True)
     buyer_id = ForeignKey(User)
     status = Varchar(length=255, choices=OrderStatus, default=OrderStatus.pending.value)
+    total = ForeignKey(Cart)
     delivery_date = Timestamp()
+
+
+class SaleProduct(Table, tablename="sale"):
+    id = Serial(null=False, primary_key=True)
+    order_passed = ForeignKey(OrderPassed)
