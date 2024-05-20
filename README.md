@@ -4,17 +4,16 @@ A revoir :
 
 En cours :
 - domain/ecommerce/interfaces = méthodes implémentée (pass)
-
+- sphinx read the doc
 
 A faire :
 - ajouter une api pour la livraison https://wiki.openstreetmap.org/wiki/API https://openlayers.org/en/latest/apidoc/module-ol_control_Control-Control.html#getMap https://medium.com/applied-data-science/stop-paying-for-apis-to-calculate-distances-and-use-this-open-source-tool-32fbb31470df
 - route technique : status api 
-- implémenter ruff https://docs.astral.sh/ruff/
 - pipeline CI/CD (circle ci, github actions...)
 - tests (domain)
 - coverage
 - push image docker sur dockerhub
-- sphinx read the doc
+
 - docker compose qui lance le back et le front
 - front
 
@@ -38,3 +37,4 @@ Fait :
 - infra/spi/repo = database, implémentation des méthodes 
 - découper les models
 - les exceptions personnalisées
+- implémenter ruff https://docs.astral.sh/ruff/
