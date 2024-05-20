@@ -1,38 +1,17 @@
-import asyncio
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, status, Depends
-from typing import List
-
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
-from dto.dto_cart import CartRequest, CartResponse, CartItemResponse, RefundRequest
-from dto.dto_payment import PaymentRequest, PaymentResponse
-from dto.dto_smtp import EmailRequest
-from routes.auth import get_current_active_buyer, get_current_user
-from models import (
-    Product,
-    Order,
-    OrderItem,
-    User,
-    Cart,
-    OrderPassed,
-    OrderStatus,
-    OrderPassed,
+from fastapi import HTTPException, status
+from infrastructure.api.dto.dto_cart import (
+    CartRequest,
+    CartResponse,
+    CartItemResponse,
+    RefundRequest,
 )
-
-from typing import List
-
-from routes.smtp import send_email
-
-router = APIRouter()
-
-carts = {}
+from infrastructure.api.dto.dto_smtp import EmailRequest
+from models import Product, Cart, OrderPassed, OrderStatus, User
+from domain.ecommerce.use_case.smtp import send_email_logic
 
 
-@router.post("/cart", dependencies=[Depends(get_current_active_buyer)])
-async def add_to_cart(
-    item: CartRequest, current_user=Depends(get_current_user)
-) -> CartResponse:
+async def add_to_cart_logic(item: CartRequest, current_user) -> CartResponse:
     buyer_id = current_user.id
     user = await User.objects().where(User.id == buyer_id).first().run()
     if user is None:
@@ -67,11 +46,7 @@ async def add_to_cart(
     )
 
 
-@router.get(
-    "/cart",
-    dependencies=[Depends(get_current_active_buyer)],
-)
-async def get_cart(current_user=Depends(get_current_user)):
+async def get_cart_logic(current_user):
     user_id = current_user.id
     cart = await Cart.objects().where(Cart.buyer_id == user_id).first().run()
     if cart is None:
@@ -95,11 +70,7 @@ async def get_cart(current_user=Depends(get_current_user)):
     }
 
 
-@router.get(
-    "/past_orders",
-    dependencies=[Depends(get_current_active_buyer)],
-)
-async def get_past_orders(current_user=Depends(get_current_user)) -> JSONResponse:
+async def get_past_orders_logic(current_user):
     user_id = current_user.id
     orders = await OrderPassed.objects().where(OrderPassed.buyer_id == user_id).run()
     if not orders:
@@ -107,14 +78,10 @@ async def get_past_orders(current_user=Depends(get_current_user)) -> JSONRespons
             status_code=400,
             detail="Aucune commande trouvée",
         )
-    return JSONResponse(
-        content=jsonable_encoder([order.to_dict() for order in orders]),
-        status_code=200,
-    )
+    return orders
 
 
-@router.post("/checkout", dependencies=[Depends(get_current_active_buyer)])
-async def checkout(current_user=Depends(get_current_user)):
+async def checkout_logic(current_user):
     user_id = current_user.id
     cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
 
@@ -131,6 +98,8 @@ async def checkout(current_user=Depends(get_current_user)):
             .run()
         )
         if product is not None:
+            product.stock -= cart_item.quantity
+            await product.save().run()
             total += cart_item.total
             order_summary += (
                 f"Product: {product.name}, Quantity: {cart_item.quantity}\n"
@@ -153,32 +122,7 @@ async def checkout(current_user=Depends(get_current_user)):
     return {"message": "Checkout successful, cart cleared"}
 
 
-async def check_carts():
-    while True:
-        carts = await Cart.objects().run()
-        for cart in carts:
-            if datetime.now() - cart.created_at > timedelta(hours=3):
-                await cart.delete(force=True).run()
-        await asyncio.sleep(3600)
-
-
-async def check_orders():
-    while True:
-        orders = await OrderPassed.objects().run()
-        for order in orders:
-            if (
-                order.status == OrderStatus.delivering
-                and datetime.now() > order.delivery_date
-            ):
-                order.status = OrderStatus.delivered
-                await order.save().run()
-        await asyncio.sleep(3600)
-
-
-@router.post(
-    "/orders/{order_id}/received", dependencies=[Depends(get_current_active_buyer)]
-)
-async def mark_order_as_received(order_id: int, current_user=Depends(get_current_user)):
+async def mark_order_as_received_logic(order_id: int, current_user):
     order = await OrderPassed.objects().where(OrderPassed.id == order_id).first().run()
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -193,15 +137,12 @@ async def mark_order_as_received(order_id: int, current_user=Depends(get_current
         subject="We value your feedback",
         body=f"Hello {current_user.username},\n\nWe noticed that you received your order. We would love to hear your thoughts on the products you purchased. Please add your review at http://localhost:8000/docs#/reviews.\n\nThank you for your time.",
     )
-    await send_email(email_request)
+    await send_email_logic(email_request)
 
     return {"message": "Order marked as received"}
 
 
-@router.post(
-    "/orders/{order_id}/cancel", dependencies=[Depends(get_current_active_buyer)]
-)
-async def cancel_order(order_id: int, current_user=Depends(get_current_user)):
+async def cancel_order_logic(order_id: int, current_user):
     order = await OrderPassed.objects().where(OrderPassed.id == order_id).first().run()
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -217,11 +158,8 @@ async def cancel_order(order_id: int, current_user=Depends(get_current_user)):
     return {"message": "Order cancelled successfully"}
 
 
-@router.post(
-    "/orders/{order_id}/refund", dependencies=[Depends(get_current_active_buyer)]
-)
-async def refund_order(
-    order_id: int, refund_request: RefundRequest, current_user=Depends(get_current_user)
+async def refund_order_logic(
+    order_id: int, refund_request: RefundRequest, current_user
 ):
     order = await OrderPassed.objects().where(OrderPassed.id == order_id).first().run()
     if order is None:
@@ -242,10 +180,8 @@ async def refund_order(
     return {"message": "Refund request received, we will process it shortly"}
 
 
-@router.delete("/cart/{item_index}", dependencies=[Depends(get_current_active_buyer)])
-async def remove_from_cart(
-    item_index: int, current_user=Depends(get_current_user)
-) -> CartResponse:
+async def remove_from_cart_logic(item_index: int, current_user):
+    carts = {}
     user_id = current_user.id
     if user_id not in carts:
         raise HTTPException(
@@ -259,8 +195,7 @@ async def remove_from_cart(
     return carts[user_id]
 
 
-@router.delete("/cart", dependencies=[Depends(get_current_active_buyer)])
-async def clear_cart(current_user=Depends(get_current_user)):
+async def clear_cart_logic(current_user):
     user_id = current_user.id
     cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
     for cart_item in cart_items:

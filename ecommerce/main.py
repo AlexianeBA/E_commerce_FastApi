@@ -1,21 +1,19 @@
 import asyncio
 from fastapi import FastAPI
 import uvicorn
-from routes import (
+from infrastructure.api.routes import (
     users,
     products,
     auth,
     cart,
     reviews,
-    sale,
     purchase,
     promo_code,
     smtp,
     sales_summurary,
-    order,
 )
 
-from routes.cart import check_orders, check_carts
+from infrastructure.api.routes.cart import check_orders, check_carts
 
 app = FastAPI()
 
@@ -25,7 +23,6 @@ app.include_router(products.router, tags=["products"])
 app.include_router(auth.router, tags=["auth"])
 app.include_router(cart.router, tags=["cart"])
 app.include_router(reviews.router, tags=["reviews"])
-app.include_router(sale.router, tags=["sale"])
 app.include_router(purchase.router, tags=["purchase"])
 app.include_router(promo_code.router, tags=["promo_code"])
 app.include_router(smtp.router, tags=["smtp"])

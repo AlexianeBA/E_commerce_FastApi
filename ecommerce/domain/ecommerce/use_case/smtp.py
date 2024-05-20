@@ -4,16 +4,13 @@ from email.mime.text import MIMEText
 
 from fastapi import APIRouter, HTTPException, status
 
-from dto.dto_smtp import EmailRequest
-
-router = APIRouter()
+from infrastructure.api.dto.dto_smtp import EmailRequest
 
 email = "MS_0t7ir0@trial-3zxk54vn9jxljy6v.mlsender.net"
 password = "uHUmWHV9uiUdgrVA"
 
 
-@router.post("/send_email")
-async def send_email(email_request: EmailRequest):
+async def send_email_logic(email_request: EmailRequest):
     try:
         msg = MIMEMultipart()
         msg["From"] = email

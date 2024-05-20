@@ -4,18 +4,18 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import jwt as jwt
-from dto.dto_auth import Login
-from dto.dto_smtp import EmailRequest
+from infrastructure.api.dto.dto_auth import Login
+from infrastructure.api.dto.dto_smtp import EmailRequest
 from models import User
-from routes.smtp import send_email
+from domain.ecommerce.use_case.smtp import send_email_logic
 from settings import pwd_context, SECRET_KEY, ALGORITHM
 from typing import Optional
 
-router = APIRouter()
+
 http_bearer = HTTPBearer()
 
 
-async def get_current_user(
+async def get_current_user_logic(
     request: Request,
     token: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
 ):
@@ -44,8 +44,8 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token: unable to decode")
 
 
-async def get_current_active_dealer(
-    current_user: User = Depends(get_current_user),
+async def get_current_active_dealer_logic(
+    current_user: User = Depends(get_current_user_logic),
 ) -> User:
     print(current_user)
     if current_user is not None and current_user.role == "saler":
@@ -53,15 +53,16 @@ async def get_current_active_dealer(
     raise HTTPException(status_code=400, detail="User is not a saler")
 
 
-async def get_current_active_buyer(current_user: User = Depends(get_current_user)):
+async def get_current_active_buyer_logic(
+    current_user: User = Depends(get_current_user_logic),
+):
     print(current_user)
     if current_user is not None and current_user.role == "buyer":
         return current_user
     raise HTTPException(status_code=400, detail="User is not a buyer")
 
 
-@router.post("/login")
-async def login(login_data: Login) -> JSONResponse:
+async def login_logic(login_data: Login) -> JSONResponse:
     user = (
         await User.objects().where(User.username == login_data.username).first().run()
     )
@@ -83,8 +84,7 @@ async def login(login_data: Login) -> JSONResponse:
     return JSONResponse(content=content)
 
 
-@router.post("/forgot_password")
-async def forgot_password(email: str):
+async def forgot_password_logic(email: str):
     user = await User.objects().where(User.email == email).first().run()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -96,12 +96,11 @@ async def forgot_password(email: str):
         subject="Reset your password",
         body=f"Click on the following link to reset your password: {reset_link}",
     )
-    await send_email(email_request)
+    await send_email_logic(email_request)
     return {"message": "Password reset email sent successfully"}
 
 
-@router.post("/reset_password")
-async def reset_password(user_id: int, new_password: str):
+async def reset_password_logic(user_id: int, new_password: str):
     user = await User.objects().where(User.id == user_id).first().run()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

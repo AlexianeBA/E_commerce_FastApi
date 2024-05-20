@@ -2,21 +2,15 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from dto.dto_user import UserUpdate, UserResponse, UserRequest
-from dto.dto_smtp import EmailRequest
-from routes.smtp import send_email
+from infrastructure.api.dto.dto_user import UserUpdate, UserResponse, UserRequest
+from infrastructure.api.dto.dto_smtp import EmailRequest
 from models import User
 from settings import pwd_context
-from routes.auth import get_current_user
+from domain.ecommerce.use_case.auth import get_current_user_logic
+from domain.ecommerce.use_case.smtp import send_email_logic
 
-router = APIRouter()
 
-
-@router.get(
-    "/users",
-    response_model=List[UserResponse],
-)
-async def get_users(role: Optional[str] = None) -> JSONResponse:
+async def get_users_logic(role: Optional[str] = None) -> JSONResponse:
     if role:
         users = await User.objects().where(User.role == role).run()
     else:
@@ -34,8 +28,7 @@ async def get_users(role: Optional[str] = None) -> JSONResponse:
     )
 
 
-@router.post("/create_users/", response_model=UserResponse)
-async def create_user(user_data: UserRequest) -> JSONResponse:
+async def create_user_logic(user_data: UserRequest) -> JSONResponse:
     hashed_password = pwd_context.hash(user_data.password)
     user = User(
         username=user_data.username,
@@ -54,12 +47,11 @@ async def create_user(user_data: UserRequest) -> JSONResponse:
         subject="Please confirm your account",
         body=f"Welcome {user.username}, please confirm your account by clicking on the following URL: {confirmation_url}",
     )
-    await send_email(email_request)
+    await send_email_logic(email_request)
     return JSONResponse(content=user.to_dict(), status_code=status.HTTP_200_OK)
 
 
-@router.get("/confirm/{user_id}")
-async def confirm_user(user_id: str):
+async def confirm_user_logic(user_id: str):
     user = await User.objects().where(User.id == user_id).first().run()
     if user:
         user.is_active = True
@@ -69,13 +61,8 @@ async def confirm_user(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
 
 
-@router.put(
-    "/update_profile",
-    response_model=UserResponse,
-    dependencies=[Depends(get_current_user)],
-)
-async def update_user(
-    user_data: UserUpdate, current_user=Depends(get_current_user)
+async def update_user_logic(
+    user_data: UserUpdate, current_user=Depends(get_current_user_logic)
 ) -> JSONResponse:
     user = await User.objects().where(User.id == current_user.id).first().run()
     if user:
@@ -101,8 +88,9 @@ async def update_user(
     )
 
 
-@router.delete("/delete_profile", dependencies=[Depends(get_current_user)])
-async def delete_user(current_user=Depends(get_current_user)) -> JSONResponse:
+async def delete_user_logic(
+    current_user=Depends(get_current_user_logic),
+) -> JSONResponse:
     user = await User.objects().where(User.id == current_user.id).first().run()
     if user:
         await user.remove().run()

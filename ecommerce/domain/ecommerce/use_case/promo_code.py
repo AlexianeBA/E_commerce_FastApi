@@ -1,12 +1,9 @@
-from dto.dto_promo_code import PromoCodeRequest
+from infrastructure.api.dto.dto_promo_code import PromoCodeRequest
 from models import PromotionalCode
 from fastapi import APIRouter, HTTPException
 
-router = APIRouter()
 
-
-@router.post("/promo_code/")
-async def create_promo_code(promo_code: PromoCodeRequest):
+async def create_promo_code_logic(promo_code: PromoCodeRequest):
     new_promo_code = PromotionalCode(
         code=promo_code.code,
         discount=promo_code.discount,

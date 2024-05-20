@@ -1,4 +1,7 @@
 {
   "python.analysis.typeCheckingMode": "basic",
-  "python.analysis.extraPaths": ["./ecommerce"]
+  "python.analysis.extraPaths": [
+    "./ecommerce",
+    "./ecommerce/infrastructure/api"
+  ]
 }
