@@ -3,15 +3,12 @@ from domain.ecommerce.exceptions.exceptions import (
     UserNotFoundException,
 )
 from domain.ecommerce.use_case.auth import (
-    get_current_active_buyer_logic,
-    get_current_user_logic,
     reset_password_logic,
     forgot_password_logic,
     login_logic,
-    get_current_active_dealer_logic,
 )
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
 from infrastructure.api.dto.dto_auth import Login

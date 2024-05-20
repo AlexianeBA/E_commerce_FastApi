@@ -1,16 +1,15 @@
 import asyncio
 from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from infrastructure.api.dto.dto_cart import (
     CartRequest,
     CartResponse,
-    CartItemResponse,
     RefundRequest,
 )
-from infrastructure.api.dto.dto_payment import PaymentRequest, PaymentResponse
-from infrastructure.api.dto.dto_smtp import EmailRequest
+
+
 from domain.ecommerce.use_case.auth import (
     get_current_active_buyer_logic,
     get_current_user_logic,
@@ -19,7 +18,6 @@ from domain.ecommerce.exceptions.exceptions import (
     ProductNotFoundException,
     UserNotFoundException,
     ServerError,
-    StockNotFoundException,
     CartNotFoundException,
     NoOrderException,
     CartEmptyException,
@@ -29,14 +27,10 @@ from domain.ecommerce.exceptions.exceptions import (
     OrderRefundException,
     ItemNotFoundException,
 )
-from models.users_models import User
-from models.product_models import Product
 from models.cart_models import Cart
 from models.order_models import (
     OrderPassed,
     OrderStatus,
-    Order,
-    OrderItem,
 )
 
 

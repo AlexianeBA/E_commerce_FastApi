@@ -1,11 +1,11 @@
 from datetime import date
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
 from domain.ecommerce.exceptions.exceptions import ProductNotFoundException
 from domain.ecommerce.use_case.product import (
     search_products_logic,
-    get_all_products_logic,
+    get_products_logic,
     get_product_details_logic,
     create_product_logic,
     update_product_logic,
@@ -15,7 +15,7 @@ from domain.ecommerce.use_case.auth import (
     get_current_user_logic,
     get_current_active_dealer_logic,
 )
-from infrastructure.api.dto.dto_product import ProductRequest, ProductResponse
+from infrastructure.api.dto.dto_product import ProductRequest
 from models.users_models import User
 from fastapi.responses import JSONResponse
 
@@ -41,7 +41,7 @@ async def get_all_products(
     created_at: Optional[date] = None,
 ) -> JSONResponse:
     try:
-        return await get_all_products_logic(
+        return await get_products_logic(
             min_price,
             max_price,
             category,

@@ -1,14 +1,9 @@
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from infrastructure.api.dto.dto_purchase import PurchaseModel
-from infrastructure.api.dto.dto_product import ProductRequest
-from infrastructure.api.dto.dto_user import UserRequest
 from models.users_models import User
 from models.product_models import Product
 from models.purchase_models import Purchase
-
-from typing import List
 
 
 async def get_buyers_info_logic(seller_id: int) -> JSONResponse:

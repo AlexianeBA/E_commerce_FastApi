@@ -21,7 +21,7 @@ async def add_review(
     except ProductNotFoundException as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to add review")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/reviews/user/{user_id}")
@@ -29,9 +29,7 @@ async def get_reviews_by_user_id(user_id: int):
     try:
         return await get_reviews_by_user_id_logic(user_id)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Failed to retrieve reviews by user ID"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/reviews/product/{product_id}")
@@ -39,9 +37,7 @@ async def get_reviews_by_product_id(product_id: int):
     try:
         return await get_reviews_by_product_id_logic(product_id)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail="Failed to retrieve reviews by product ID"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/reviews/{review_id}")
@@ -49,4 +45,4 @@ async def get_review_by_id(review_id: int):
     try:
         return await get_review_by_id_logic(review_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to retrieve review by ID")
+        raise HTTPException(status_code=500, detail=str(e))

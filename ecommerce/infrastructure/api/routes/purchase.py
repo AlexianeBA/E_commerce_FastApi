@@ -1,15 +1,6 @@
-from datetime import datetime
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
-from infrastructure.api.dto.dto_purchase import PurchaseModel
-from infrastructure.api.dto.dto_product import ProductRequest
-from infrastructure.api.dto.dto_user import UserRequest
-from models.users_models import User
-from models.product_models import Product
-from models.purchase_models import Purchase
+from fastapi import APIRouter
 
 from domain.ecommerce.use_case.purchase import get_buyers_info_logic
-from typing import List
 
 
 router = APIRouter()

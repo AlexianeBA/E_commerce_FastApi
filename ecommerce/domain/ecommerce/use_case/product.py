@@ -1,7 +1,7 @@
 from datetime import date
-from typing import List, Optional
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import Depends
 from domain.ecommerce.exceptions.exceptions import ProductNotFoundException
 from domain.ecommerce.use_case.auth import (
     get_current_user_logic,
@@ -25,7 +25,7 @@ async def search_products_logic(name: str):
     ]
 
 
-async def get_all_products_logic(
+async def get_products_logic(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     category: Optional[str] = None,

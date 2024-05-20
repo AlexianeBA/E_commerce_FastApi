@@ -2,7 +2,6 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from fastapi import APIRouter, HTTPException, status
 
 from domain.ecommerce.exceptions.exceptions import EmailSendingException
 from infrastructure.api.dto.dto_smtp import EmailRequest
@@ -24,5 +23,5 @@ async def send_email_logic(email_request: EmailRequest):
         server.sendmail(email, email_request.receiver_email, msg.as_string())
         server.quit()
         return "Email sent successfully"
-    except:
-        raise EmailSendingException("Email not sent")
+    except Exception:
+        raise EmailSendingException("An error occurred while sending the email")

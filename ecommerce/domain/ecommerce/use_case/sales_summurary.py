@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends
+
 from domain.ecommerce.exceptions.exceptions import (
     OrderNotFoundException,
     UnauthorizedException,

@@ -1,18 +1,16 @@
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status, Depends
+from typing import Optional
+from fastapi import HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from domain.ecommerce.exceptions.exceptions import (
-    ServerError,
     UserAlreadyExistsException,
     UserNotFoundException,
 )
-from infrastructure.api.dto.dto_user import UserUpdate, UserResponse, UserRequest
-from infrastructure.api.dto.dto_smtp import EmailRequest
+from infrastructure.api.dto.dto_user import UserUpdate, UserRequest
+
 from models.users_models import User
 from settings import pwd_context
 from domain.ecommerce.use_case.auth import get_current_user_logic
-from domain.ecommerce.use_case.smtp import send_email_logic
 
 
 async def get_users_logic(role: Optional[str] = None) -> JSONResponse:

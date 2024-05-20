@@ -1,7 +1,6 @@
 from domain.ecommerce.exceptions.exceptions import PromoCodeCreationException
 from infrastructure.api.dto.dto_promo_code import PromoCodeRequest
 from models.promotionalcode_models import PromotionalCode
-from fastapi import APIRouter, HTTPException
 
 
 async def create_promo_code_logic(promo_code: PromoCodeRequest):

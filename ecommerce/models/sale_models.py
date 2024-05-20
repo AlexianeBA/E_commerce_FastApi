@@ -1,17 +1,13 @@
-import random
 from piccolo.table import Table
 from piccolo.columns import (
     Varchar,
     Integer,
-    Boolean,
-    Timestamp,
     Serial,
     ForeignKey,
     Date,
 )
-from datetime import datetime
-from enum import Enum
-import pandas as pd
+
+
 from models.product_models import Product, Category
 from models.order_models import OrderPassed
 

@@ -1,12 +1,11 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import Depends
 from fastapi.responses import JSONResponse
 from domain.ecommerce.exceptions.exceptions import (
     ProductNotFoundException,
     ReviewNotFoundException,
 )
 from infrastructure.api.dto.dto_review import ReviewModel
-from infrastructure.api.routes.auth import (
-    get_current_active_buyer_logic,
+from infrastructure.api.routes.users import (
     get_current_user_logic,
 )
 from models.product_models import Product

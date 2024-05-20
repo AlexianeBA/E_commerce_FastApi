@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from fastapi import HTTPException, status
+
 from infrastructure.api.dto.dto_cart import (
     CartRequest,
     CartResponse,
@@ -17,7 +17,6 @@ from domain.ecommerce.exceptions.exceptions import (
     UserNotFoundException,
     StockNotFoundException,
     CartNotFoundException,
-    CartEmptyException,
     NoOrderException,
     CartEmptyException,
     OrderNotFoundException,
@@ -129,11 +128,11 @@ async def checkout_logic(current_user):
         total=total,
     )
     await order.save().run()
-    email_request = EmailRequest(
-        receiver_email=current_user.email,
-        subject="Order Summary",
-        body=f"Hello {current_user.username},\n\n{order_summary}\n\nYour order will be delivered by {order.delivery_date}.",
-    )
+    # email_request = EmailRequest(
+    #     receiver_email=current_user.email,
+    #     subject="Order Summary",
+    #     body=f"Hello {current_user.username},\n\n{order_summary}\n\nYour order will be delivered by {order.delivery_date}.",
+    # )
     # await send_email(email_request)
     return {"message": "Checkout successful, cart cleared"}
 

@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException
+
 from domain.ecommerce.exceptions.exceptions import OrderNotFoundException
-from domain.ecommerce.use_case.auth import get_current_user_logic
+
 from domain.ecommerce.use_case.sales_summurary import (
     get_current_active_admin_logic,
     get_all_orders_logic,

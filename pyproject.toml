@@ -16,6 +16,8 @@ pyjwt = "^2.8.0"
 pandas = "^2.2.2"
 sendgrid = "^6.11.0"
 bcrypt = "^4.1.3"
+httpx = "^0.27.0"
+ruff = "^0.4.4"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -24,3 +26,11 @@ ipykernel = "^6.29.4"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Activer certaines règles
+select = ["E", "F", "W", "C90"]
+# Ignorer certaines règles
+ignore = ["E203", "E501", "C901"]
+# Configurer d'autres options
+line-length = 88
