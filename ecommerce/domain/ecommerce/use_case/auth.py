@@ -6,7 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt as jwt
 from infrastructure.api.dto.dto_auth import Login
 from infrastructure.api.dto.dto_smtp import EmailRequest
-from models import User
+from domain.ecommerce.models.users_models import User
 from domain.ecommerce.use_case.smtp import send_email_logic
 from settings import pwd_context, SECRET_KEY, ALGORITHM
 from typing import Optional

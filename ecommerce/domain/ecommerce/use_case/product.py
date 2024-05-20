@@ -7,7 +7,9 @@ from domain.ecommerce.use_case.auth import (
     get_current_active_dealer_logic,
 )
 from infrastructure.api.dto.dto_product import ProductRequest, ProductResponse
-from models import Product, Review, User
+from domain.ecommerce.models.product_models import Product
+from domain.ecommerce.models.users_models import User
+from domain.ecommerce.models.review_models import Review
 from fastapi.responses import JSONResponse
 
 

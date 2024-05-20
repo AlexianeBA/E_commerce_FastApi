@@ -15,16 +15,21 @@ from domain.ecommerce.use_case.auth import (
     get_current_active_buyer_logic,
     get_current_user_logic,
 )
-from models import (
-    Product,
-    Order,
-    OrderItem,
-    User,
-    Cart,
+from domain.ecommerce.exceptions.exceptions import (
+    ProductNotFoundException,
+    UserNotFoundException,
+    ServerError,
+)
+from domain.ecommerce.models.users_models import User
+from domain.ecommerce.models.product_models import Product
+from domain.ecommerce.models.cart_models import Cart
+from domain.ecommerce.models.order_models import (
     OrderPassed,
     OrderStatus,
-    OrderPassed,
+    Order,
+    OrderItem,
 )
+
 
 from domain.ecommerce.use_case.cart import (
     add_to_cart_logic,
@@ -43,8 +48,17 @@ router = APIRouter()
 @router.post("/cart", dependencies=[Depends(get_current_active_buyer_logic)])
 async def add_to_cart(
     item: CartRequest, current_user=Depends(get_current_user_logic)
-) -> CartResponse:
-    return await add_to_cart_logic(item, current_user)
+) -> JSONResponse:
+    try:
+        cart: CartResponse = await add_to_cart_logic(item, current_user)
+        return JSONResponse(
+            content=jsonable_encoder(cart),
+            status_code=200,
+        )
+    except (ProductNotFoundException, UserNotFoundException) as e:
+        return JSONResponse(status_code=400, content={"message": str(e)})
+    except ServerError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/cart", dependencies=[Depends(get_current_active_buyer_logic)])

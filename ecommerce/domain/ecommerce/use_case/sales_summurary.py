@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from domain.ecommerce.use_case.auth import get_current_user_logic
-from models import SaleProduct, OrderPassed
+from domain.ecommerce.models.order_models import OrderPassed
 
 
 async def get_current_active_admin_logic(current_user=Depends(get_current_user_logic)):

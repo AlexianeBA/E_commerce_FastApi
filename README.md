@@ -3,13 +3,7 @@ TODO:
 A revoir :
 
 En cours :
-- Appliquer une Architecture DDD
 
-- dans domain/ecommerce = use_case = logique des routes
-- infra doit hérité de domain mais pas l'inverse
-- dans infra/api = routes appelle de la logique des routes présentes dans use_case + DTO
-- Créer des Uses Cases afin de clean les endpoints
-- infra/spi/repo = database, implémentation des méthodes 
 - découper les models
 - domain/ecommerce/interfaces = méthodes implémentée (pass)
 
@@ -38,4 +32,9 @@ Fait :
 - Implémenter le suivi de la commande (nombre de jours pour livraison)
 - re implémenter les users avec le même MDP pour tous https://www.mockaroo.com/
 - Créer un dashboard admin avec un répac de toutes les ventes sur la plateforme, CA généré moyen,..., nombres d'Orders en Error,In Progress,Done....
-
+- Appliquer une Architecture DDD
+- dans domain/ecommerce = use_case = logique des routes
+- infra doit hérité de domain mais pas l'inverse
+- dans infra/api = routes appelle de la logique des routes présentes dans use_case + DTO
+- Créer des Uses Cases afin de clean les endpoints
+- infra/spi/repo = database, implémentation des méthodes 

@@ -15,7 +15,7 @@ from domain.ecommerce.use_case.auth import (
     get_current_active_dealer_logic,
 )
 from infrastructure.api.dto.dto_product import ProductRequest, ProductResponse
-from models import User
+from domain.ecommerce.models.users_models import User
 from fastapi.responses import JSONResponse
 
 router = APIRouter()

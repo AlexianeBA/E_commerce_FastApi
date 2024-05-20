@@ -5,7 +5,8 @@ from infrastructure.api.routes.auth import (
     get_current_active_buyer_logic,
     get_current_user_logic,
 )
-from models import Product, Review
+from domain.ecommerce.models.product_models import Product
+from domain.ecommerce.models.review_models import Review
 
 
 async def add_review_logic(

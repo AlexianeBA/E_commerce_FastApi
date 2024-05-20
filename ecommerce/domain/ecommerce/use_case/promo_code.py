@@ -1,5 +1,5 @@
 from infrastructure.api.dto.dto_promo_code import PromoCodeRequest
-from models import PromotionalCode
+from domain.ecommerce.models.promotionalcode_models import PromotionalCode
 from fastapi import APIRouter, HTTPException
 
 

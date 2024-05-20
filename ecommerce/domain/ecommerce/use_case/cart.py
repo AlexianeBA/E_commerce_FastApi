@@ -7,21 +7,28 @@ from infrastructure.api.dto.dto_cart import (
     RefundRequest,
 )
 from infrastructure.api.dto.dto_smtp import EmailRequest
-from models import Product, Cart, OrderPassed, OrderStatus, User
+from domain.ecommerce.models.product_models import Product
+from domain.ecommerce.models.cart_models import Cart
+from domain.ecommerce.models.order_models import OrderPassed, OrderStatus
+from domain.ecommerce.models.users_models import User
 from domain.ecommerce.use_case.smtp import send_email_logic
+from domain.ecommerce.exceptions.exceptions import (
+    ProductNotFoundException,
+    UserNotFoundException,
+)
 
 
 async def add_to_cart_logic(item: CartRequest, current_user) -> CartResponse:
     buyer_id = current_user.id
     user = await User.objects().where(User.id == buyer_id).first().run()
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise UserNotFoundException("User not found")
 
     product = await Product.objects().where(Product.id == item.product_id).first().run()
     if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise ProductNotFoundException("Product not found")
     if product.stock < item.quantity:
-        raise HTTPException(status_code=400, detail="Stock insuffisant")
+        raise ProductNotFoundException("Stock insuffisant")
 
     product.stock -= item.quantity
     await product.save().run()

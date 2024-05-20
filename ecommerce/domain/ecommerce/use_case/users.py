@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from infrastructure.api.dto.dto_user import UserUpdate, UserResponse, UserRequest
 from infrastructure.api.dto.dto_smtp import EmailRequest
-from models import User
+from domain.ecommerce.models.users_models import User
 from settings import pwd_context
 from domain.ecommerce.use_case.auth import get_current_user_logic
 from domain.ecommerce.use_case.smtp import send_email_logic
