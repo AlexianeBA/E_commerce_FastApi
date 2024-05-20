@@ -12,14 +12,13 @@ from piccolo.columns import (
 from datetime import datetime
 from enum import Enum
 import pandas as pd
-from domain.ecommerce.models.users_models import User
-from domain.ecommerce.models.product_models import Product
+from models.users_models import User
+from models.product_models import Product
 
 
-class Purchase(Table, tablename="purchase_product"):
+class Review(Table, tablename="review_product"):
     id = Serial(null=False, primary_key=True)
-    buyer_id = ForeignKey(User)
+    user_id = ForeignKey(User)
     product_id = ForeignKey(Product)
-    quantity = Integer()
-    total = Integer()
-    purchase_date = Timestamp()
+    rating = Integer()
+    comment = Varchar()

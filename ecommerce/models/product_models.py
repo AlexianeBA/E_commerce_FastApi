@@ -10,7 +10,7 @@ from piccolo.columns import (
 )
 from datetime import datetime
 from enum import Enum
-from domain.ecommerce.models.users_models import User
+from models.users_models import User
 
 
 class Category(str, Enum):

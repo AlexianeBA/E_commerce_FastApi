@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 
 from fastapi import APIRouter, HTTPException, status
 
+from domain.ecommerce.exceptions.exceptions import EmailSendingException
 from infrastructure.api.dto.dto_smtp import EmailRequest
 
 email = "MS_0t7ir0@trial-3zxk54vn9jxljy6v.mlsender.net"
@@ -23,5 +24,5 @@ async def send_email_logic(email_request: EmailRequest):
         server.sendmail(email, email_request.receiver_email, msg.as_string())
         server.quit()
         return "Email sent successfully"
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except:
+        raise EmailSendingException("Email not sent")

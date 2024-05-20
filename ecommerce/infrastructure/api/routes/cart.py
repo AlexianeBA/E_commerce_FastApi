@@ -19,11 +19,20 @@ from domain.ecommerce.exceptions.exceptions import (
     ProductNotFoundException,
     UserNotFoundException,
     ServerError,
+    StockNotFoundException,
+    CartNotFoundException,
+    NoOrderException,
+    CartEmptyException,
+    OrderNotFoundException,
+    UnauthorizedException,
+    OrderCancellationException,
+    OrderRefundException,
+    ItemNotFoundException,
 )
-from domain.ecommerce.models.users_models import User
-from domain.ecommerce.models.product_models import Product
-from domain.ecommerce.models.cart_models import Cart
-from domain.ecommerce.models.order_models import (
+from models.users_models import User
+from models.product_models import Product
+from models.cart_models import Cart
+from models.order_models import (
     OrderPassed,
     OrderStatus,
     Order,
@@ -63,28 +72,47 @@ async def add_to_cart(
 
 @router.get("/cart", dependencies=[Depends(get_current_active_buyer_logic)])
 async def get_cart(current_user=Depends(get_current_user_logic)):
-    return await get_cart_logic(current_user)  # type: ignore
+    try:
+        return await get_cart_logic(current_user)
+    except CartNotFoundException:
+        raise HTTPException(status_code=404, detail="Cart not found")
 
 
 @router.get("/past_orders", dependencies=[Depends(get_current_active_buyer_logic)])
 async def get_past_orders(current_user=Depends(get_current_user_logic)) -> JSONResponse:
-    orders = await get_past_orders_logic(current_user)
-    return JSONResponse(
-        content=jsonable_encoder([order.to_dict() for order in orders]),
-        status_code=200,
-    )
+    try:
+        orders = await get_past_orders_logic(current_user)
+        return JSONResponse(
+            content=jsonable_encoder([order.to_dict() for order in orders]),
+            status_code=200,
+        )
+    except NoOrderException:
+        raise HTTPException(
+            status_code=400,
+            detail="Aucune commande trouvée",
+        )
 
 
 @router.post("/checkout", dependencies=[Depends(get_current_active_buyer_logic)])
 async def checkout(current_user=Depends(get_current_user_logic)):
-    return await checkout_logic(current_user)
+    try:
+        return await checkout_logic(current_user)
+    except CartEmptyException:
+        raise HTTPException(status_code=400, detail="Cart is empty")
 
 
 @router.post(
     "/orders/{order_id}/cancel", dependencies=[Depends(get_current_active_buyer_logic)]
 )
 async def cancel_order(order_id: int, current_user=Depends(get_current_user_logic)):
-    return await cancel_order_logic(order_id, current_user)
+    try:
+        return await cancel_order_logic(order_id, current_user)
+    except OrderNotFoundException:
+        raise HTTPException(status_code=404, detail="Order not found")
+    except UnauthorizedException:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    except OrderCancellationException:
+        raise HTTPException(status_code=400, detail="Order cannot be cancelled")
 
 
 @router.post(
@@ -95,7 +123,14 @@ async def refund_order(
     refund_request: RefundRequest,
     current_user=Depends(get_current_user_logic),
 ):
-    return await refund_order_logic(order_id, refund_request, current_user)
+    try:
+        return await refund_order_logic(order_id, refund_request, current_user)
+    except OrderNotFoundException:
+        raise HTTPException(status_code=404, detail="Order not found")
+    except UnauthorizedException:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    except OrderRefundException:
+        raise HTTPException(status_code=400, detail="Order cannot be refunded")
 
 
 @router.delete(
@@ -104,12 +139,20 @@ async def refund_order(
 async def remove_from_cart(
     item_index: int, current_user=Depends(get_current_user_logic)
 ) -> CartResponse:
-    return await remove_from_cart_logic(item_index, current_user)
+    try:
+        return await remove_from_cart_logic(item_index, current_user)
+    except CartNotFoundException:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    except ItemNotFoundException:
+        raise HTTPException(status_code=404, detail="Item not found in cart")
 
 
 @router.delete("/cart", dependencies=[Depends(get_current_active_buyer_logic)])
 async def clear_cart(current_user=Depends(get_current_user_logic)):
-    return await clear_cart_logic(current_user)
+    try:
+        return await clear_cart_logic(current_user)
+    except CartNotFoundException:
+        raise HTTPException(status_code=404, detail="Cart not found")
 
 
 async def check_carts():

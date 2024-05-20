@@ -2,20 +2,23 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
+from domain.ecommerce.exceptions.exceptions import ProductNotFoundException
 from domain.ecommerce.use_case.auth import (
     get_current_user_logic,
     get_current_active_dealer_logic,
 )
 from infrastructure.api.dto.dto_product import ProductRequest, ProductResponse
-from domain.ecommerce.models.product_models import Product
-from domain.ecommerce.models.users_models import User
-from domain.ecommerce.models.review_models import Review
+from models.product_models import Product
+from models.users_models import User
+from models.review_models import Review
 from fastapi.responses import JSONResponse
 
 
 async def search_products_logic(name: str):
     products_query = Product.objects().where(Product.name.ilike(f"%{name}%"))
     products = await products_query.run()
+    if not products:
+        raise ProductNotFoundException("Aucun produit trouvé")
     return [
         ProductResponse(**product.to_dict(), created_at=product.date_created)
         for product in products
@@ -62,44 +65,40 @@ async def get_all_products_logic(
 
     if discount is not None:
         products_query = products_query.where(Product.discount == discount)
+
     if created_at is not None:
         products_query = products_query.where(Product.date_created == created_at)
 
     products = await products_query.run()
 
-    if products:
-        product_list = []
-        for product in products:
-            username = await product.username
-            product_dict = product.to_dict()
-            if product.date_created is not None:
-                product_dict["date_created"] = product.date_created.isoformat()
-            product_dict["username_saler"] = username
-            reviews = (
-                await Review.objects().where(Review.product_id == product.id).run()
-            )
-            product_dict["reviews"] = [review.to_dict() for review in reviews]
+    if not products:
+        raise ProductNotFoundException("Aucun produit trouvé")
 
-            if product.discount_end_date is not None:
-                product_dict["discount_end_date"] = (
-                    product.discount_end_date.isoformat()
-                )
-            if product.discount > 0 and (
-                product.discount_end_date is None
-                or product.discount_end_date >= date.today()
-            ):
-                product_dict["price"] = product.price * (1 - product.discount / 100)
-            product_list.append(product_dict)
+    product_list = []
+    for product in products:
+        username = await product.username
+        product_dict = product.to_dict()
+        if product.date_created is not None:
+            product_dict["date_created"] = product.date_created.isoformat()
+        product_dict["username_saler"] = username
+        reviews = await Review.objects().where(Review.product_id == product.id).run()
+        product_dict["reviews"] = [review.to_dict() for review in reviews]
 
-        return JSONResponse(
-            content=product_list,
-            status_code=200,
-        )
-    else:
-        return JSONResponse(
-            content={"message": "Aucun produit trouvé"},
-            status_code=404,
-        )
+        if product.discount_end_date is not None:
+            product_dict["discount_end_date"] = product.discount_end_date.isoformat()
+
+        if product.discount > 0 and (
+            product.discount_end_date is None
+            or product.discount_end_date >= date.today()
+        ):
+            product_dict["price"] = product.price * (1 - product.discount / 100)
+
+        product_list.append(product_dict)
+
+    return JSONResponse(
+        content=product_list,
+        status_code=200,
+    )
 
 
 async def get_product_details_logic(
@@ -111,9 +110,8 @@ async def get_product_details_logic(
         .first()
         .run()
     )
-
     if not product:
-        raise HTTPException(status_code=404, detail="Produit non trouvé")
+        raise ProductNotFoundException("Produit non trouvé")
     return JSONResponse(
         {
             "id": product["id"],
@@ -198,7 +196,7 @@ async def update_product_logic(
             status_code=201,
         )
     else:
-        raise HTTPException(status_code=404, detail="Produit non trouvé")
+        raise ProductNotFoundException("Produit non trouvé")
 
 
 async def delete_product_logic(
@@ -211,7 +209,7 @@ async def delete_product_logic(
         .run()
     )
     if not product:
-        raise HTTPException(status_code=404, detail="Produit non trouvé")
+        raise ProductNotFoundException("Produit non trouvé")
     else:
         await product.remove().run()
     return JSONResponse({"message": "Produit supprimé avec succès"})

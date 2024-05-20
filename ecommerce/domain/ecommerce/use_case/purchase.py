@@ -4,9 +4,9 @@ from fastapi.responses import JSONResponse
 from infrastructure.api.dto.dto_purchase import PurchaseModel
 from infrastructure.api.dto.dto_product import ProductRequest
 from infrastructure.api.dto.dto_user import UserRequest
-from domain.ecommerce.models.users_models import User
-from domain.ecommerce.models.product_models import Product
-from domain.ecommerce.models.purchase_models import Purchase
+from models.users_models import User
+from models.product_models import Product
+from models.purchase_models import Purchase
 
 from typing import List
 

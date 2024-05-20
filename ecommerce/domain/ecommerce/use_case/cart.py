@@ -7,14 +7,24 @@ from infrastructure.api.dto.dto_cart import (
     RefundRequest,
 )
 from infrastructure.api.dto.dto_smtp import EmailRequest
-from domain.ecommerce.models.product_models import Product
-from domain.ecommerce.models.cart_models import Cart
-from domain.ecommerce.models.order_models import OrderPassed, OrderStatus
-from domain.ecommerce.models.users_models import User
+from models.product_models import Product
+from models.cart_models import Cart
+from models.order_models import OrderPassed, OrderStatus
+from models.users_models import User
 from domain.ecommerce.use_case.smtp import send_email_logic
 from domain.ecommerce.exceptions.exceptions import (
     ProductNotFoundException,
     UserNotFoundException,
+    StockNotFoundException,
+    CartNotFoundException,
+    CartEmptyException,
+    NoOrderException,
+    CartEmptyException,
+    OrderNotFoundException,
+    UnauthorizedException,
+    OrderCancellationException,
+    OrderRefundException,
+    ItemNotFoundException,
 )
 
 
@@ -28,7 +38,7 @@ async def add_to_cart_logic(item: CartRequest, current_user) -> CartResponse:
     if product is None:
         raise ProductNotFoundException("Product not found")
     if product.stock < item.quantity:
-        raise ProductNotFoundException("Stock insuffisant")
+        raise StockNotFoundException("Stock insuffisant")
 
     product.stock -= item.quantity
     await product.save().run()
@@ -57,7 +67,7 @@ async def get_cart_logic(current_user):
     user_id = current_user.id
     cart = await Cart.objects().where(Cart.buyer_id == user_id).first().run()
     if cart is None:
-        raise HTTPException(status_code=404, detail="Cart not found")
+        raise CartNotFoundException("Cart not found")
     items = await Cart.objects().where(Cart.buyer_id == user_id).run()
     items_response = [
         CartItemResponse(
@@ -81,9 +91,8 @@ async def get_past_orders_logic(current_user):
     user_id = current_user.id
     orders = await OrderPassed.objects().where(OrderPassed.buyer_id == user_id).run()
     if not orders:
-        raise HTTPException(
-            status_code=400,
-            detail="Aucune commande trouvée",
+        raise NoOrderException(
+            "Aucune commande trouvée",
         )
     return orders
 
@@ -93,7 +102,7 @@ async def checkout_logic(current_user):
     cart_items = await Cart.objects().where(Cart.buyer_id == user_id).run()
 
     if not cart_items:
-        raise HTTPException(status_code=400, detail="Cart is empty")
+        raise CartEmptyException("Cart is empty")
 
     order_summary = "Order Summary:\n"
     total = 0
@@ -132,9 +141,9 @@ async def checkout_logic(current_user):
 async def mark_order_as_received_logic(order_id: int, current_user):
     order = await OrderPassed.objects().where(OrderPassed.id == order_id).first().run()
     if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise OrderNotFoundException("Order not found")
     if order.buyer_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise UnauthorizedException("Not authorized")
 
     order.status = OrderStatus.delivered
     await order.save().run()
@@ -152,12 +161,12 @@ async def mark_order_as_received_logic(order_id: int, current_user):
 async def cancel_order_logic(order_id: int, current_user):
     order = await OrderPassed.objects().where(OrderPassed.id == order_id).first().run()
     if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise OrderNotFoundException("Order not found")
     if order.buyer_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise UnauthorizedException("Not authorized")
 
     if order.status != OrderStatus.delivering:
-        raise HTTPException(status_code=400, detail="Order cannot be cancelled")
+        raise OrderCancellationException("Order cannot be cancelled")
 
     order.status = OrderStatus.cancelled
     await order.save().run()
@@ -170,19 +179,17 @@ async def refund_order_logic(
 ):
     order = await OrderPassed.objects().where(OrderPassed.id == order_id).first().run()
     if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
+        raise OrderNotFoundException("Order not found")
     if order.buyer_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise UnauthorizedException("Not authorized")
 
     if order.status != OrderStatus.delivered:
-        raise HTTPException(status_code=400, detail="Order cannot be refunded")
+        raise OrderRefundException("Order cannot be refunded")
 
     for product_id in refund_request.product_ids:
         product = await Product.objects().where(Product.id == product_id).first().run()
         if product is None:
-            raise HTTPException(
-                status_code=404, detail=f"Product with id {product_id} not found"
-            )
+            raise ProductNotFoundException(f"Product with id {product_id} not found")
 
     return {"message": "Refund request received, we will process it shortly"}
 
@@ -191,13 +198,9 @@ async def remove_from_cart_logic(item_index: int, current_user):
     carts = {}
     user_id = current_user.id
     if user_id not in carts:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found"
-        )
+        raise CartNotFoundException("Cart not found")
     if item_index >= len(carts[user_id].items) or item_index < 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found in cart"
-        )
+        raise ItemNotFoundException("Item not found in cart")
     del carts[user_id].items[item_index]
     return carts[user_id]
 
