@@ -1,0 +1,41 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --no-interaction --no-ansi
+
+      - name: Run tests
+        run: |
+          # Add commands to run your tests here
+
+      - name: Build Docker image
+        run: |
+          docker build -t ecommerce-api .
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          echo ${{ secrets.DOCKER_HUB_PASSWORD }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+          docker tag ecommerce-api:latest ${{ secrets.DOCKER_HUB_USERNAME }}/ecommerce-api:latest
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/ecommerce-api:latest
+
+      - name: Run Docker image
+        run: |
+          docker run -d -p 8000:8000 ecommerce-api uvicorn main:app --host 0.0.0.0 --port 8000
