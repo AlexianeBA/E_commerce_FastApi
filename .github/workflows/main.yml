@@ -22,9 +22,6 @@ jobs:
           poetry config virtualenvs.create false
           poetry install --no-interaction --no-ansi
 
-      - name: Run tests
-        run: |
-          # Add commands to run your tests here
 
       - name: Build Docker image
         run: |
